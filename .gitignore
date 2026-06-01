@@ -1,0 +1,50 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# React Native
+.expo/
+dist/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Android
+android/app/build/
+android/.gradle/
+android/local.properties
+android/captures/
+android/keystores/
+
+# iOS
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+DerivedData/
+
+# Misc
+.DS_Store
+*.env
+*.env.local
+.env.*
+!.env.example
+
+# Metro
+.metro-health-check*
+
+# Buck
+buck-out/
+\.buckd/
+*.keystore
+!debug.keystore
+
+# Yarn
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
