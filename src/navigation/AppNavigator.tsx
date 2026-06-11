@@ -1,8 +1,4 @@
 // src/navigation/AppNavigator.tsx
-// 🧭 Navigateur principal de l'application
-// Architecture :
-//   SplashScreen → (Auth Stack OU DrawerNavigator → BottomTabNavigator)
-
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -15,87 +11,68 @@ import { useAuthStore } from '../store/authStore';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { SplashScreen } from '../screens/SplashScreen';
-import { DrawerNavigator } from './DrawerNavigator';
-import { RootStackParamList, AuthStackParamList } from './types';
+import { HomeScreen } from '../screens/HomeScreen';
+import { EditorScreen } from '../screens/EditorScreen';
+import { ExportScreen } from '../screens/ExportScreen';
 
-// ─── Stack d'authentification ────────────────────────────────
-const AuthStack = createStackNavigator<AuthStackParamList>();
+const AuthStack = createStackNavigator();
+const AppStack = createStackNavigator();
 
-const AuthNavigator: React.FC = () => (
-  <AuthStack.Navigator
-    screenOptions={{
-      headerShown: false,
-      cardStyle: { backgroundColor: Colors.bg.primary },
-    }}>
+const AuthNavigator = () => (
+  <AuthStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: Colors.bg.primary } }}>
     <AuthStack.Screen name="Login" component={LoginScreen} />
     <AuthStack.Screen name="Register" component={RegisterScreen} />
   </AuthStack.Navigator>
 );
 
-// ─── Stack racine ────────────────────────────────────────────
-const RootStack = createStackNavigator<RootStackParamList>();
+const MainNavigator = () => (
+  <AppStack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: Colors.bg.primary } }}>
+    <AppStack.Screen name="Home" component={HomeScreen} />
+    <AppStack.Screen name="Editor" component={EditorScreen} />
+    <AppStack.Screen name="Export" component={ExportScreen} />
+  </AppStack.Navigator>
+);
 
-// ─── Navigateur principal ────────────────────────────────────
 export const AppNavigator: React.FC = () => {
   const { user, setSession, isInitializing, setInitializing } = useAuthStore();
   const [splashDone, setSplashDone] = useState(false);
 
-  // Récupération de la session Supabase
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setInitializing(false);
+    }).catch(() => {
+      setInitializing(false);
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // ── Splash Screen ──────────────────────────────────────────
   if (!splashDone) {
-    return (
-      <SplashScreen
-        onFinish={() => setSplashDone(true)}
-      />
-    );
+    return <SplashScreen onFinish={() => setSplashDone(true)} />;
   }
 
-  // ── Chargement de la session ───────────────────────────────
   if (isInitializing) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.loading}>
         <ActivityIndicator size="large" color={Colors.accent.primary} />
       </View>
     );
   }
 
-  // ── Navigation principale ──────────────────────────────────
   return (
     <NavigationContainer>
-      <RootStack.Navigator
-        screenOptions={{
-          headerShown: false,
-          cardStyle: { backgroundColor: Colors.bg.primary },
-        }}>
-        {user ? (
-          // ✅ Connecté → Drawer + Bottom Tabs
-          <RootStack.Screen name="Main" component={DrawerNavigator} />
-        ) : (
-          // 🔒 Non connecté → Login / Register
-          <RootStack.Screen name="Auth" component={AuthNavigator} />
-        )}
-      </RootStack.Navigator>
+      {user ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  loadingContainer: {
+  loading: {
     flex: 1,
     backgroundColor: Colors.bg.primary,
     justifyContent: 'center',

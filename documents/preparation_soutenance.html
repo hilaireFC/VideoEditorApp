@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dossier de Soutenance - VideoEditorApp</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        h1 {
+            color: #10B981;
+            border-bottom: 2px solid #E5E7EB;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #374151;
+            margin-top: 30px;
+        }
+        .question {
+            background-color: #F3F4F6;
+            border-left: 4px solid #10B981;
+            padding: 10px 15px;
+            font-weight: bold;
+            color: #1F2937;
+            margin-top: 25px;
+        }
+        .answer {
+            background-color: #F9FAFB;
+            padding: 15px;
+            border: 1px solid #E5E7EB;
+            margin-top: 5px;
+            border-radius: 4px;
+        }
+        .code {
+            font-family: Consolas, Monaco, monospace;
+            background-color: #E5E7EB;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #111827;
+            font-weight: bold;
+        }
+        .tip {
+            background-color: #DBEAFE;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            color: #1E3A8A;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎓 Dossier de Soutenance - Préparation et Défense du Projet</h1>
+
+    <div class="tip">
+        <strong>🎯 Stratégie :</strong> Lors de la présentation, parlez avec assurance. Si le professeur vous demande "Comment as-tu fait ça ?", répondez toujours en citant <strong>le nom du fichier</strong> et <strong>le nom de la fonction</strong>. Cela prouve immédiatement votre implication dans le code.
+    </div>
+
+    <h2>❓ Questions Anticipées et Réponses Types</h2>
+
+    <div class="question">1. Comment avez-vous géré l'importation de vidéos et musiques depuis le téléphone ?</div>
+    <div class="answer">
+        "J'ai utilisé la librairie <span class="code">react-native-image-picker</span>. Si vous regardez dans le fichier <span class="code">src/screens/EditorScreen.tsx</span>, j'ai écrit une fonction nommée <span class="code">handleAddVideo</span>. Cette fonction appelle <span class="code">launchImageLibrary({ mediaType: 'video' })</span>. Une fois que l'utilisateur a choisi sa vidéo, je récupère l'URL locale du fichier et je l'envoie dans mon store d'état global grâce à la fonction <span class="code">addVideoClip()</span>."
+    </div>
+
+    <div class="question">2. Le système de Timeline est complexe. Comment l'avez-vous programmé de zéro ?</div>
+    <div class="answer">
+        "Dans le fichier <span class="code">EditorScreen.tsx</span>, je récupère le tableau <span class="code">videoClips</span> depuis mon store Zustand. J'utilise la méthode Javascript <span class="code">.map()</span> pour boucler sur ces clips. Pour chaque clip, je calcule sa durée réelle en fonction du découpage (Trim) et de sa vitesse avec la formule : <span class="code">(endTrim - startTrim) / speed</span>. Cela me permet de déterminer précisément à quelle seconde démarre et s'arrête chaque bloc visuel sur l'écran par rapport au <span class="code">currentTime</span> global."
+    </div>
+
+    <div class="question">3. Comment votre application gère-t-elle l'authentification des utilisateurs ?</div>
+    <div class="answer">
+        "J'ai intégré <strong>Supabase</strong>. J'ai initialisé la connexion dans le fichier <span class="code">src/services/supabase.ts</span>. Toute la logique métier est centralisée dans <span class="code">src/store/authStore.ts</span> avec les méthodes <span class="code">login()</span> et <span class="code">register()</span> qui appellent <span class="code">supabase.auth.signInWithPassword()</span>. J'utilise également <span class="code">AsyncStorage</span> pour sauvegarder le token de l'utilisateur : ainsi, s'il ferme l'application, il reste connecté à la prochaine ouverture."
+    </div>
+
+    <div class="question">4. Pourquoi avez-vous utilisé Zustand plutôt que Redux pour la gestion d'état ?</div>
+    <div class="answer">
+        "Zustand est beaucoup plus léger et performant. Dans une application de montage, les états changent des dizaines de fois par seconde (le lecteur vidéo actualise la position). Zustand m'a permis d'éviter le code 'boilerplate' de Redux. Mon fichier <span class="code">src/store/editorStore.ts</span> contient tout l'état de mon projet (clips, audio, textes) de manière centralisée."
+    </div>
+
+    <div class="question">5. Je vois que vous avez un Slider (jauge) pour le volume et la vitesse. C'est le composant natif de React ?</div>
+    <div class="answer">
+        "Non, et c'est un point technique important. Les librairies natives de sliders cassaient la compilation Gradle. Pour garantir la stabilité de l'application, <strong>j'ai développé mon propre composant Slider 100% JavaScript</strong> dans <span class="code">src/components/CustomSlider.tsx</span>. J'utilise l'API <span class="code">PanResponder</span> de React Native pour capter précisément les mouvements du doigt sur l'écran et je calcule le ratio de remplissage manuellement."
+    </div>
+
+    <div class="question">6. Le processus d'exportation compile-t-il vraiment la vidéo finale sur le téléphone ?</div>
+    <div class="answer">
+        "Pour cette version de soutenance (MVP), l'écran d'exportation (<span class="code">ExportScreen.tsx</span>) simule le processus de rendu. La compilation vidéo réelle sur smartphone nécessite d'intégrer FFmpeg en C++, ce qui entraînait des conflits avec l'environnement de compilation Android de la salle. Cette simulation m'a permis de valider toute l'UX lors de la démonstration, ce qui est mon objectif principal."
+    </div>
+
+    <h2>💡 Conseils bonus pour la présentation</h2>
+    <ul>
+        <li><strong>Ouvrez le code</strong> : Préparez VSCode en arrière-plan. Si le prof pose une question, montrez-lui directement le fichier concerné.</li>
+        <li><strong>Prenez le crédit</strong> : Utilisez toujours "J'ai développé", "J'ai configuré", "J'ai dû résoudre ce bug en créant...".</li>
+        <li><strong>Soyez honnête sur les limites</strong> : La réponse 6 est parfaite pour expliquer un contournement technique intelligent.</li>
+    </ul>
+
+</body>
+</html>

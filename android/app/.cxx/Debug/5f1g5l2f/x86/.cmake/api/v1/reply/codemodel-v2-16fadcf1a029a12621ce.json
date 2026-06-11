@@ -204,7 +204,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "appmodules::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-appmodules-Debug-33e83e505dded2ef24de.json",
+					"jsonFile" : "target-appmodules-Debug-b80803a04677c4a37079.json",
 					"name" : "appmodules",
 					"projectIndex" : 0
 				},
@@ -239,7 +239,7 @@
 				{
 					"directoryIndex" : 2,
 					"id" : "react_codegen_rngesturehandler_codegen::@39f233abcd2c728bc6ec",
-					"jsonFile" : "target-react_codegen_rngesturehandler_codegen-Debug-68c7a63e64c6d67a1339.json",
+					"jsonFile" : "target-react_codegen_rngesturehandler_codegen-Debug-8fb23e79bb1da81595f3.json",
 					"name" : "react_codegen_rngesturehandler_codegen",
 					"projectIndex" : 0
 				},
@@ -253,7 +253,7 @@
 				{
 					"directoryIndex" : 6,
 					"id" : "react_codegen_rnscreens::@25bcbd507e98d3a854ad",
-					"jsonFile" : "target-react_codegen_rnscreens-Debug-20c1f44b156b2a5ea3ca.json",
+					"jsonFile" : "target-react_codegen_rnscreens-Debug-eb1324834be485c90dd1.json",
 					"name" : "react_codegen_rnscreens",
 					"projectIndex" : 0
 				},
@@ -267,7 +267,7 @@
 				{
 					"directoryIndex" : 5,
 					"id" : "react_codegen_safeareacontext::@7984cd80db47aa7b952a",
-					"jsonFile" : "target-react_codegen_safeareacontext-Debug-0f3bfe76a835f9a3a14f.json",
+					"jsonFile" : "target-react_codegen_safeareacontext-Debug-f2307a1048fd857146b7.json",
 					"name" : "react_codegen_safeareacontext",
 					"projectIndex" : 0
 				}
@@ -277,7 +277,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/Seller/.antigravity/VideoEditorApp/android/app/.cxx/Debug/5f1g5l2f/x86_64",
+		"build" : "C:/Users/Seller/.antigravity/VideoEditorApp/android/app/.cxx/Debug/5f1g5l2f/x86",
 		"source" : "C:/Users/Seller/.antigravity/VideoEditorApp/node_modules/react-native/ReactAndroid/cmake-utils/default-app-setup"
 	},
 	"version" : 

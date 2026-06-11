@@ -328,15 +328,11 @@
 		},
 		{
 			"backtrace" : 4,
-			"id" : "react_codegen_rnreanimated::@8afabad14bfffa3f8b9a"
-		},
-		{
-			"backtrace" : 4,
 			"id" : "react_codegen_RNVectorIconsSpec::@479809fae146501fd34d"
 		},
 		{
 			"backtrace" : 4,
-			"id" : "react_codegen_rnscreens::@25bcbd507e98d3a854ad"
+			"id" : "react_codegen_rnreanimated::@8afabad14bfffa3f8b9a"
 		},
 		{
 			"backtrace" : 4,
@@ -344,11 +340,15 @@
 		},
 		{
 			"backtrace" : 4,
-			"id" : "react_codegen_RNWorkletsSpec::@c787b30dd2b0f948dced"
+			"id" : "react_codegen_rnscreens::@25bcbd507e98d3a854ad"
 		},
 		{
 			"backtrace" : 4,
 			"id" : "react_codegen_rnworklets::@68f58d84d4754f193387"
+		},
+		{
+			"backtrace" : 4,
+			"id" : "react_codegen_RNWorkletsSpec::@c787b30dd2b0f948dced"
 		}
 	],
 	"id" : "appmodules::@6890427a1f51a3e7e1df",

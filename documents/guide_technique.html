@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide Technique - VideoEditorApp</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        h1 {
+            color: #4F46E5;
+            border-bottom: 2px solid #E5E7EB;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #374151;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #4B5563;
+        }
+        .highlight {
+            background-color: #FEF3C7;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .code {
+            font-family: Consolas, Monaco, monospace;
+            background-color: #F3F4F6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #1F2937;
+        }
+        .card {
+            background-color: #F9FAFB;
+            border-left: 4px solid #4F46E5;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📱 Guide Technique et Fonctionnement - VideoEditorApp</h1>
+
+    <p>Ce document explique l'architecture complète de l'application que vous avez développée. Il détaille la structure des dossiers, le rôle de chaque fichier clé et le fonctionnement des composants principaux.</p>
+
+    <h2>🏗️ 1. Architecture Globale (React Native)</h2>
+    <p>L'application est construite avec <strong>React Native</strong> (TypeScript) pour garantir des performances proches du natif tout en utilisant les standards du web.</p>
+    <ul>
+        <li><strong>Frontend UI</strong> : Composants fonctionnels React avec des Hooks (<span class="code">useState</span>, <span class="code">useEffect</span>, <span class="code">useRef</span>).</li>
+        <li><strong>State Management (Gestion d'état)</strong> : Utilisation de <strong>Zustand</strong> (<span class="code">src/store/</span>), choisi pour sa légèreté par rapport à Redux.</li>
+        <li><strong>Backend (BaaS)</strong> : <strong>Supabase</strong> gère la base de données et l'authentification des utilisateurs.</li>
+        <li><strong>Stockage Local</strong> : <span class="code">AsyncStorage</span> est utilisé pour sauvegarder les sessions utilisateurs et les projets vidéos brouillons sur le téléphone.</li>
+    </ul>
+
+    <h2>📂 2. Structure des Dossiers</h2>
+    <p>Voici l'organisation de votre code source (<span class="code">src/</span>) :</p>
+    <ul>
+        <li>📁 <strong><span class="code">components/</span></strong> : Composants réutilisables (ex: <span class="code">CustomSlider.tsx</span>).</li>
+        <li>📁 <strong><span class="code">navigation/</span></strong> : Fichiers gérant le routage de l'app (<span class="code">AppNavigator.tsx</span>).</li>
+        <li>📁 <strong><span class="code">screens/</span></strong> : Les vues principales (Home, Editor, Login, etc.).</li>
+        <li>📁 <strong><span class="code">services/</span></strong> : Connexions aux API externes (<span class="code">supabase.ts</span>, <span class="code">ffmpeg.service.ts</span>).</li>
+        <li>📁 <strong><span class="code">store/</span></strong> : Les fichiers Zustand contenant la logique métier (<span class="code">authStore.ts</span>, <span class="code">editorStore.ts</span>).</li>
+        <li>📁 <strong><span class="code">theme/</span></strong> : Couleurs, typographie et espacements globaux pour un design harmonieux.</li>
+    </ul>
+
+    <h2>🔐 3. Le Flux d'Authentification</h2>
+    <p>L'authentification est gérée par <strong>Supabase</strong> et synchronisée dans l'application via Zustand.</p>
+    <div class="card">
+        <ol>
+            <li><strong><span class="code">src/services/supabase.ts</span></strong> : Initialise le client Supabase avec l'URL de projet et la clé publique (Anon Key).</li>
+            <li><strong><span class="code">src/store/authStore.ts</span></strong> : Contient les fonctions <span class="code">login()</span>, <span class="code">register()</span>, et <span class="code">logout()</span>. Il stocke l'état global <span class="code">user</span>.</li>
+            <li><strong><span class="code">src/screens/LoginScreen.tsx</span></strong> : Appelle <span class="code">login(email, password)</span> depuis le store lors du clic.</li>
+            <li><strong><span class="code">src/navigation/AppNavigator.tsx</span></strong> : Écoute les changements d'état. Si connecté, affiche MainNavigator (Accueil), sinon affiche AuthNavigator (Connexion).</li>
+        </ol>
+    </div>
+
+    <h2>🎬 4. Le Cœur du Projet : L'Éditeur Vidéo</h2>
+    
+    <h3>A. La gestion de l'état (EditorStore)</h3>
+    <p>Dans <span class="code">src/store/editorStore.ts</span>, l'état du projet vidéo est stocké sous forme de tableaux :</p>
+    <ul>
+        <li><span class="code">videoClips[]</span> : Liste des vidéos importées.</li>
+        <li><span class="code">audioClips[]</span> : Liste des musiques de fond.</li>
+        <li><span class="code">textOverlays[]</span> : Liste des textes superposés.</li>
+    </ul>
+
+    <h3>B. L'Interface de Montage (EditorScreen.tsx)</h3>
+    <p>C'est le fichier central (<span class="code">src/screens/EditorScreen.tsx</span>).</p>
+    <ul>
+        <li><strong>Le Player</strong> : Utilise la librairie <span class="code">react-native-video</span>.</li>
+        <li><strong>La Timeline</strong> : Une boucle <span class="code">map</span> calcule la durée active de chaque clip (<span class="code">endTrim - startTrim / speed</span>) pour positionner les blocs visuellement sur un axe horizontal.</li>
+        <li><strong>Les Outils</strong> : Les boutons ouvrent des Modals pour ajuster le Volume, la Vitesse, ou les Filtres.</li>
+    </ul>
+
+    <h3>C. Le Slider Maison (CustomSlider.tsx)</h3>
+    <p>Pour éviter des bugs de compilation liés aux librairies natives, <strong>vous avez développé votre propre Slider 100% JavaScript</strong> en utilisant l'API <span class="code">PanResponder</span> pour capter les glissements de doigt de l'utilisateur.</p>
+
+    <h2>🚀 5. Le Flux d'Exportation</h2>
+    <p>Dans <span class="code">src/screens/ExportScreen.tsx</span>, l'écran récupère les données depuis <span class="code">editorStore.ts</span>. Un algorithme simule une barre de progression réaliste à l'aide de timers (<span class="code">setTimeout</span>), permettant de démontrer l'expérience utilisateur finale avec succès.</p>
+
+</body>
+</html>

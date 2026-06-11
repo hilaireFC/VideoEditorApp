@@ -2,9 +2,9 @@
 import { create } from 'zustand';
 
 export interface FilterSettings {
-  brightness: number;  // Default: 1.0 (0.0 to 2.0)
-  contrast: number;    // Default: 1.0 (0.0 to 2.0)
-  saturation: number;  // Default: 1.0 (0.0 to 2.0)
+  brightness: number;
+  contrast: number;
+  saturation: number;
 }
 
 export interface VideoClip {
@@ -12,13 +12,13 @@ export interface VideoClip {
   name: string;
   uri: string;
   type: 'video' | 'image';
-  duration: number;        // Original duration in seconds
-  startTrim: number;       // Trim start point (seconds)
-  endTrim: number;         // Trim end point (seconds)
-  volume: number;          // Volume level (0.0 to 1.0)
-  speed: number;           // Playback speed (0.25x to 4.0x)
+  duration: number;
+  startTrim: number;
+  endTrim: number;
+  volume: number;
+  speed: number;
   filter: FilterSettings;
-  thumbnail: string;       // Path to thumbnail image
+  thumbnail: string;
 }
 
 export interface AudioClip {
@@ -29,7 +29,7 @@ export interface AudioClip {
   startTrim: number;
   endTrim: number;
   volume: number;
-  timelineStart: number;   // Position in seconds where it starts in the timeline
+  timelineStart: number;
 }
 
 export interface TextOverlay {
@@ -40,8 +40,19 @@ export interface TextOverlay {
   fontFamily: string;
   timelineStart: number;
   duration: number;
-  positionX: number;       // X percentage (0 to 100)
-  positionY: number;       // Y percentage (0 to 100)
+  positionX: number;
+  positionY: number;
+}
+
+export interface ImageOverlay {
+  id: string;
+  uri: string;
+  isEmoji: boolean;
+  timelineStart: number;
+  duration: number;
+  positionX: number;
+  positionY: number;
+  scale: number;
 }
 
 interface ProjectState {
@@ -51,49 +62,47 @@ interface ProjectState {
   videoClips: VideoClip[];
   audioClips: AudioClip[];
   textOverlays: TextOverlay[];
+  imageOverlays: ImageOverlay[];
   currentTime: number;
   isPlaying: boolean;
   selectedClipId: string | null;
-  selectedTrackType: 'video' | 'audio' | 'text' | null;
+  selectedTrackType: 'video' | 'audio' | 'text' | 'image' | null;
   history: Array<{
     videoClips: VideoClip[];
     audioClips: AudioClip[];
     textOverlays: TextOverlay[];
+    imageOverlays: ImageOverlay[];
   }>;
   historyIndex: number;
 }
 
 interface EditorActions {
-  // Project Actions
   setProjectName: (name: string) => void;
   setAspectRatio: (ratio: '16:9' | '9:16' | '1:1' | '4:3') => void;
   resetProject: (id: string, name: string) => void;
   loadProject: (project: Omit<ProjectState, 'isPlaying' | 'currentTime' | 'selectedClipId' | 'selectedTrackType' | 'history' | 'historyIndex'>) => void;
   
-  // Playback Actions
   setCurrentTime: (time: number) => void;
   setIsPlaying: (playing: boolean) => void;
+  selectClip: (id: string | null, type: 'video' | 'audio' | 'text' | 'image' | null) => void;
   
-  // Selection Actions
-  selectClip: (id: string | null, type: 'video' | 'audio' | 'text' | null) => void;
-  
-  // Video Clip Actions
   addVideoClip: (clip: Omit<VideoClip, 'startTrim' | 'endTrim' | 'volume' | 'speed' | 'filter'>) => void;
   removeVideoClip: (id: string) => void;
   updateVideoClip: (id: string, updates: Partial<Omit<VideoClip, 'id'>>) => void;
   reorderVideoClips: (clips: VideoClip[]) => void;
   
-  // Audio Clip Actions
   addAudioClip: (clip: Omit<AudioClip, 'startTrim' | 'endTrim' | 'volume'>) => void;
   removeAudioClip: (id: string) => void;
   updateAudioClip: (id: string, updates: Partial<Omit<AudioClip, 'id'>>) => void;
   
-  // Text Overlay Actions
   addTextOverlay: (text: Omit<TextOverlay, 'id'>) => void;
   removeTextOverlay: (id: string) => void;
   updateTextOverlay: (id: string, updates: Partial<Omit<TextOverlay, 'id'>>) => void;
 
-  // History Actions (Undo/Redo)
+  addImageOverlay: (image: Omit<ImageOverlay, 'id'>) => void;
+  removeImageOverlay: (id: string) => void;
+  updateImageOverlay: (id: string, updates: Partial<Omit<ImageOverlay, 'id'>>) => void;
+
   saveToHistory: () => void;
   undo: () => void;
   redo: () => void;
@@ -108,6 +117,7 @@ const initialProjectState: ProjectState = {
   videoClips: [],
   audioClips: [],
   textOverlays: [],
+  imageOverlays: [],
   currentTime: 0,
   isPlaying: false,
   selectedClipId: null,
@@ -138,16 +148,16 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     selectedTrackType: null,
     history: [
       {
-        videoClips: project.videoClips,
-        audioClips: project.audioClips,
-        textOverlays: project.textOverlays,
+        videoClips: project.videoClips || [],
+        audioClips: project.audioClips || [],
+        textOverlays: project.textOverlays || [],
+        imageOverlays: project.imageOverlays || [],
       }
     ],
     historyIndex: 0,
   }),
 
   setCurrentTime: (currentTime) => {
-    // Clamp time to total project duration
     const totalDur = get().videoClips.reduce((acc, c) => acc + ((c.endTrim - c.startTrim) / c.speed), 0);
     const clamped = Math.max(0, Math.min(currentTime, totalDur));
     set({ currentTime: clamped });
@@ -227,10 +237,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   addTextOverlay: (text) => {
     const id = Math.random().toString(36).substring(7);
-    const newText: TextOverlay = {
-      id,
-      ...text,
-    };
+    const newText: TextOverlay = { id, ...text };
     set({ textOverlays: [...get().textOverlays, newText] });
     get().saveToHistory();
   },
@@ -254,22 +261,43 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     get().saveToHistory();
   },
 
+  addImageOverlay: (image) => {
+    const id = Math.random().toString(36).substring(7);
+    const newImage: ImageOverlay = { id, ...image };
+    set({ imageOverlays: [...get().imageOverlays, newImage] });
+    get().saveToHistory();
+  },
+
+  removeImageOverlay: (id) => {
+    const updated = get().imageOverlays.filter(i => i.id !== id);
+    const isSelected = get().selectedClipId === id;
+    set({
+      imageOverlays: updated,
+      selectedClipId: isSelected ? null : get().selectedClipId,
+      selectedTrackType: isSelected ? null : get().selectedTrackType,
+    });
+    get().saveToHistory();
+  },
+
+  updateImageOverlay: (id, updates) => {
+    const updated = get().imageOverlays.map(i => 
+      i.id === id ? { ...i, ...updates } : i
+    );
+    set({ imageOverlays: updated });
+    get().saveToHistory();
+  },
+
   saveToHistory: () => {
-    const { videoClips, audioClips, textOverlays, history, historyIndex } = get();
+    const { videoClips, audioClips, textOverlays, imageOverlays, history, historyIndex } = get();
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push({
       videoClips: JSON.parse(JSON.stringify(videoClips)),
       audioClips: JSON.parse(JSON.stringify(audioClips)),
       textOverlays: JSON.parse(JSON.stringify(textOverlays)),
+      imageOverlays: JSON.parse(JSON.stringify(imageOverlays || [])),
     });
-    // Keep max 50 items in history stack
-    if (newHistory.length > 50) {
-      newHistory.shift();
-    }
-    set({
-      history: newHistory,
-      historyIndex: newHistory.length - 1,
-    });
+    if (newHistory.length > 50) newHistory.shift();
+    set({ history: newHistory, historyIndex: newHistory.length - 1 });
   },
 
   undo: () => {
@@ -281,6 +309,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         videoClips: snapshot.videoClips,
         audioClips: snapshot.audioClips,
         textOverlays: snapshot.textOverlays,
+        imageOverlays: snapshot.imageOverlays,
         historyIndex: targetIndex,
       });
     }
@@ -295,6 +324,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         videoClips: snapshot.videoClips,
         audioClips: snapshot.audioClips,
         textOverlays: snapshot.textOverlays,
+        imageOverlays: snapshot.imageOverlays,
         historyIndex: targetIndex,
       });
     }
