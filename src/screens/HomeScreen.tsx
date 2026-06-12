@@ -10,13 +10,16 @@ import {
   SafeAreaView,
   StatusBar,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
 import { Colors, Spacing, Typography } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useEditorStore } from '../store/editorStore';
 
+const { width } = Dimensions.get('window');
 const PROJECTS_KEY = 'local_projects_v1';
 
 interface ProjectData {
@@ -72,15 +75,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const handleNewProject = async () => {
-    // Launch gallery to pick a video file
-    const result = await launchImageLibrary({
-      mediaType: 'video',
-      quality: 1,
-    });
-
-    if (result.didCancel || !result.assets || result.assets.length === 0) {
-      return;
-    }
+    const result = await launchImageLibrary({ mediaType: 'video', quality: 1 });
+    if (result.didCancel || !result.assets || result.assets.length === 0) return;
 
     const asset = result.assets[0];
     if (!asset.uri) {
@@ -91,10 +87,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const newProjectId = Math.random().toString(36).substring(7);
     const projectName = `Projet_${new Date().toLocaleDateString().replace(/\//g, '-')}`;
 
-    // Reset store to initial state for new project
     resetProject(newProjectId, projectName);
-
-    // Add selected video as first clip
     addVideoClip({
       id: Math.random().toString(36).substring(7),
       name: asset.fileName || 'Video Clip',
@@ -104,7 +97,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       thumbnail: '',
     });
 
-    // Save project locally
     const newProject: ProjectData = {
       id: newProjectId,
       name: projectName,
@@ -133,26 +125,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       });
       navigation.navigate('Editor');
     } catch (e) {
-      console.error(e);
       Alert.alert('Erreur', 'Impossible de charger le projet.');
     }
   };
 
   const handleDeleteProject = (id: string, name: string) => {
-    Alert.alert('Supprimer le projet', `Voulez-vous vraiment supprimer "${name}" ?`, [
+    Alert.alert('Supprimer', `Supprimer "${name}" ?`, [
       { text: 'Annuler', style: 'cancel' },
       {
         text: 'Supprimer',
         style: 'destructive',
         onPress: async () => {
-          try {
-            const raw = await AsyncStorage.getItem(PROJECTS_KEY);
-            const existing: ProjectData[] = raw ? JSON.parse(raw) : [];
-            await AsyncStorage.setItem(PROJECTS_KEY, JSON.stringify(existing.filter(p => p.id !== id)));
-            setProjects(prev => prev.filter(p => p.id !== id));
-          } catch (e) {
-            Alert.alert('Erreur', 'Impossible de supprimer le projet.');
-          }
+          const raw = await AsyncStorage.getItem(PROJECTS_KEY);
+          const existing: ProjectData[] = raw ? JSON.parse(raw) : [];
+          const filtered = existing.filter(p => p.id !== id);
+          await AsyncStorage.setItem(PROJECTS_KEY, JSON.stringify(filtered));
+          setProjects(filtered);
         },
       },
     ]);
@@ -161,87 +149,92 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const renderProjectItem = ({ item }: { item: ProjectData }) => {
     const dateStr = new Date(item.lastModified).toLocaleDateString();
     return (
-      <View style={styles.projectItem}>
+      <TouchableOpacity
+        style={styles.projectCard}
+        onPress={() => handleOpenProject(item)}
+        activeOpacity={0.9}
+      >
+        <View style={styles.projectThumbnail}>
+          <Text style={styles.projectThumbnailIcon}>🎞️</Text>
+        </View>
+        <View style={styles.projectInfo}>
+          <Text style={styles.projectName} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.projectMeta}>{dateStr} • {item.aspectRatio}</Text>
+        </View>
         <TouchableOpacity
-          style={styles.projectItemInfo}
-          onPress={() => handleOpenProject(item)}
-        >
-          <Text style={styles.projectIcon}>🎬</Text>
-          <View style={styles.projectMeta}>
-            <Text style={styles.projectName}>{item.name}</Text>
-            <Text style={styles.projectSubtitle}>
-              Ratio: {item.aspectRatio} • Modifié le {dateStr}
-            </Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.deleteButton}
+          style={styles.deleteIconButton}
           onPress={() => handleDeleteProject(item.id, item.name)}
         >
-          <Text style={styles.deleteButtonText}>🗑️</Text>
+          <Text style={{ fontSize: 16 }}>🗑️</Text>
         </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bg.primary} />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       
-      {/* Header bar */}
-      <View style={styles.headerBar}>
-        <View>
-          <Text style={styles.headerWelcome}>Bonjour,</Text>
-          <Text style={styles.headerEmail} numberOfLines={1}>
-          {user?.email || 'Créateur'}
-          </Text>
-        </View>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Déconnexion 🚪</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Main Action Block */}
-      <View style={styles.heroSection}>
-        <TouchableOpacity style={styles.newProjectCard} onPress={handleNewProject}>
-          <Text style={styles.newProjectPlus}>➕</Text>
-          <Text style={styles.newProjectTitle}>Nouveau Projet</Text>
-          <Text style={styles.newProjectSubtitle}>Importer une vidéo pour commencer le montage</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Projects Title */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Mes Projets Récents</Text>
-        {projects.length > 0 && (
-          <TouchableOpacity onPress={fetchProjects}>
-            <Text style={styles.refreshLink}>Actualiser 🔄</Text>
+      {/* Dynamic Header */}
+      <LinearGradient colors={['#1e1e2d', Colors.bg.primary]} style={styles.header}>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.welcomeText}>Mes Projets</Text>
+            <Text style={styles.userEmail}>{user?.email || 'Créateur'}</Text>
+          </View>
+          <TouchableOpacity style={styles.profileBtn} onPress={handleLogout}>
+            <Text style={styles.profileEmoji}>👤</Text>
           </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity onPress={handleNewProject} activeOpacity={0.8}>
+          <LinearGradient
+            colors={Colors.accent.gradient as any}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.newProjectHero}
+          >
+            <View style={styles.newProjectCircle}>
+              <Text style={styles.plusIcon}>+</Text>
+            </View>
+            <View style={styles.newProjectTextContainer}>
+              <Text style={styles.newProjectTitle}>Nouveau Projet</Text>
+              <Text style={styles.newProjectSubtitle}>Importez une vidéo pour commencer</Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+      </LinearGradient>
+
+      {/* Projects Section */}
+      <View style={styles.projectsSection}>
+        <View style={styles.sectionTitleRow}>
+          <Text style={styles.sectionTitle}>Récents</Text>
+          {projects.length > 0 && (
+            <TouchableOpacity onPress={fetchProjects}>
+              <Text style={styles.refreshText}>Actualiser</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {loading ? (
+          <ActivityIndicator color={Colors.accent.primary} style={{ marginTop: 40 }} />
+        ) : projects.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>🎬</Text>
+            <Text style={styles.emptyText}>Commencez votre première création</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={projects}
+            renderItem={renderProjectItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
         )}
       </View>
-
-      {/* Projects List */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.accent.primary} />
-          <Text style={styles.loadingText}>Chargement des projets...</Text>
-        </View>
-      ) : projects.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📂</Text>
-          <Text style={styles.emptyTitle}>Aucun projet</Text>
-          <Text style={styles.emptySubtitle}>Appuyez sur "Nouveau Projet" pour créer votre premier montage.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={projects}
-          renderItem={renderProjectItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-        />
-      )}
     </SafeAreaView>
   );
 };
@@ -251,158 +244,142 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg.primary,
   },
-  headerBar: {
+  header: {
+    paddingTop: 50,
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.xl,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderColor: Colors.border.subtle,
+    marginBottom: Spacing.xl,
   },
-  headerWelcome: {
-    color: Colors.text.tertiary,
-    fontSize: Typography.fontSize.sm,
-  },
-  headerEmail: {
+  welcomeText: {
     color: Colors.text.primary,
-    fontSize: Typography.fontSize.md,
-    fontWeight: '700',
-    maxWidth: 200,
+    fontSize: 24,
+    fontWeight: '900',
   },
-  logoutButton: {
-    backgroundColor: Colors.bg.secondary,
-    borderWidth: 1,
-    borderColor: Colors.border.default,
-    borderRadius: 8,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+  userEmail: {
+    color: Colors.text.tertiary,
+    fontSize: 14,
   },
-  logoutText: {
-    color: Colors.text.secondary,
-    fontSize: Typography.fontSize.sm,
-    fontWeight: '600',
-  },
-  heroSection: {
-    padding: Spacing.xl,
-  },
-  newProjectCard: {
-    backgroundColor: Colors.bg.secondary,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: Colors.accent.primary,
-    borderStyle: 'dashed',
-    paddingVertical: Spacing.mega,
-    alignItems: 'center',
+  profileBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  newProjectPlus: {
-    fontSize: 32,
-    marginBottom: Spacing.sm,
+  profileEmoji: { fontSize: 20 },
+  newProjectHero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.lg,
+    borderRadius: 20,
+    shadowColor: Colors.accent.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  newProjectCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  plusIcon: {
+    color: '#fff',
+    fontSize: 30,
+    fontWeight: 'bold',
+  },
+  newProjectTextContainer: {
+    marginLeft: Spacing.md,
   },
   newProjectTitle: {
-    color: Colors.text.primary,
-    fontSize: Typography.fontSize.lg,
+    color: '#fff',
+    fontSize: 18,
     fontWeight: '800',
   },
   newProjectSubtitle: {
-    color: Colors.text.tertiary,
-    fontSize: Typography.fontSize.sm,
-    marginTop: Spacing.xs,
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
   },
-  sectionHeader: {
+  projectsSection: {
+    flex: 1,
+    paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.xl,
+  },
+  sectionTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   sectionTitle: {
-    color: Colors.text.primary,
-    fontSize: Typography.fontSize.md,
-    fontWeight: '800',
+    color: Colors.text.secondary,
+    fontSize: 16,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  refreshLink: {
+  refreshText: {
     color: Colors.accent.secondary,
-    fontSize: Typography.fontSize.sm,
-    fontWeight: '600',
+    fontSize: 14,
   },
-  listContainer: {
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.xl,
+  listContent: {
+    paddingBottom: 40,
   },
-  projectItem: {
-    flexDirection: 'row',
-    backgroundColor: Colors.bg.secondary,
-    borderColor: Colors.border.default,
-    borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: Spacing.md,
-    overflow: 'hidden',
-  },
-  projectItemInfo: {
-    flex: 1,
+  projectCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.bg.secondary,
+    borderRadius: 16,
     padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.03)',
   },
-  projectIcon: {
-    fontSize: 24,
-    marginRight: Spacing.md,
+  projectThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    backgroundColor: Colors.bg.tertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  projectMeta: {
+  projectThumbnailIcon: { fontSize: 24 },
+  projectInfo: {
     flex: 1,
+    marginLeft: Spacing.md,
   },
   projectName: {
     color: Colors.text.primary,
-    fontSize: Typography.fontSize.base,
+    fontSize: 16,
     fontWeight: '700',
   },
-  projectSubtitle: {
+  projectMeta: {
     color: Colors.text.tertiary,
-    fontSize: Typography.fontSize.xs,
-    marginTop: Spacing.xs,
+    fontSize: 12,
+    marginTop: 2,
   },
-  deleteButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    borderLeftWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+  deleteIconButton: {
+    padding: 10,
   },
-  deleteButtonText: {
-    fontSize: Typography.fontSize.md,
-  },
-  loadingContainer: {
+  emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    opacity: 0.5,
   },
-  loadingText: {
-    color: Colors.text.tertiary,
-    marginTop: Spacing.md,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.mega,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: Spacing.md,
-  },
-  emptyTitle: {
-    color: Colors.text.primary,
-    fontSize: Typography.fontSize.lg,
-    fontWeight: '700',
-  },
-  emptySubtitle: {
-    color: Colors.text.tertiary,
-    fontSize: Typography.fontSize.sm,
-    textAlign: 'center',
-    marginTop: Spacing.xs,
-  },
+  emptyIcon: { fontSize: 60, marginBottom: 10 },
+  emptyText: { color: Colors.text.tertiary, textAlign: 'center' },
 });

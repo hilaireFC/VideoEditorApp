@@ -1,5 +1,5 @@
 // src/screens/SettingsScreen.tsx
-// ⚙️ Écran Paramètres (placeholder pour l'équipe)
+// ⚙️ Écran Paramètres - Design Modernisé
 
 import React from 'react';
 import {
@@ -10,7 +10,9 @@ import {
   StatusBar,
   TouchableOpacity,
   Switch,
+  ScrollView,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { Colors, Spacing, Typography } from '../theme';
 import { useAuthStore } from '../store/authStore';
 
@@ -21,205 +23,216 @@ export const SettingsScreen: React.FC = () => {
   const [autoSave, setAutoSave] = React.useState(true);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bg.primary} />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <LinearGradient colors={['#1a1a2e', Colors.bg.primary]} style={styles.gradient}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Paramètres</Text>
+            </View>
 
-      {/* En-tête */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Paramètres</Text>
-      </View>
+            {/* Profile Section */}
+            <LinearGradient
+              colors={['rgba(139, 92, 246, 0.15)', 'rgba(18, 18, 26, 0.8)']}
+              style={styles.profileCard}
+            >
+              <LinearGradient
+                colors={Colors.accent.gradient as any}
+                style={styles.avatar}
+              >
+                <Text style={styles.avatarText}>
+                  {user?.email?.[0]?.toUpperCase() || '?'}
+                </Text>
+              </LinearGradient>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>Mon Profil</Text>
+                <Text style={styles.profileEmail} numberOfLines={1}>
+                  {user?.email || 'Non connecté'}
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.editBtn}>
+                <Text style={{fontSize: 18}}>✏️</Text>
+              </TouchableOpacity>
+            </LinearGradient>
 
-      {/* Profil */}
-      <View style={styles.profileCard}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user?.email?.[0]?.toUpperCase() || '?'}
-          </Text>
-        </View>
-        <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>Mon Compte</Text>
-          <Text style={styles.profileEmail} numberOfLines={1}>
-            {user?.email || 'Non connecté'}
-          </Text>
-        </View>
-      </View>
+            {/* Preferences Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>PRÉFÉRENCES</Text>
 
-      {/* Section Options */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>PRÉFÉRENCES</Text>
+              <View style={styles.row}>
+                <View style={styles.rowIcon}>
+                  <Text style={{fontSize: 20}}>🌙</Text>
+                </View>
+                <Text style={styles.rowLabel}>Mode Sombre</Text>
+                <Switch
+                  value={darkMode}
+                  onValueChange={setDarkMode}
+                  trackColor={{ false: '#333', true: Colors.accent.primary }}
+                  thumbColor="#fff"
+                />
+              </View>
 
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>🌙  Mode sombre</Text>
-          <Switch
-            value={darkMode}
-            onValueChange={setDarkMode}
-            trackColor={{ true: Colors.accent.primary }}
-            thumbColor="#fff"
-          />
-        </View>
+              <View style={styles.divider} />
 
-        <View style={styles.divider} />
+              <View style={styles.row}>
+                <View style={styles.rowIcon}>
+                  <Text style={{fontSize: 20}}>🔔</Text>
+                </View>
+                <Text style={styles.rowLabel}>Notifications</Text>
+                <Switch
+                  value={notifEnabled}
+                  onValueChange={setNotifEnabled}
+                  trackColor={{ false: '#333', true: Colors.accent.primary }}
+                  thumbColor="#fff"
+                />
+              </View>
 
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>🔔  Notifications</Text>
-          <Switch
-            value={notifEnabled}
-            onValueChange={setNotifEnabled}
-            trackColor={{ true: Colors.accent.primary }}
-            thumbColor="#fff"
-          />
-        </View>
+              <View style={styles.divider} />
 
-        <View style={styles.divider} />
+              <View style={styles.row}>
+                <View style={styles.rowIcon}>
+                  <Text style={{fontSize: 20}}>💾</Text>
+                </View>
+                <Text style={styles.rowLabel}>Sauvegarde auto</Text>
+                <Switch
+                  value={autoSave}
+                  onValueChange={setAutoSave}
+                  trackColor={{ false: '#333', true: Colors.accent.primary }}
+                  thumbColor="#fff"
+                />
+              </View>
+            </View>
 
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>💾  Sauvegarde auto</Text>
-          <Switch
-            value={autoSave}
-            onValueChange={setAutoSave}
-            trackColor={{ true: Colors.accent.primary }}
-            thumbColor="#fff"
-          />
-        </View>
-      </View>
+            {/* About Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>À PROPOS</Text>
 
-      {/* Section À propos */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>À PROPOS</Text>
+              <TouchableOpacity style={styles.row}>
+                <View style={styles.rowIcon}>
+                  <Text style={{fontSize: 20}}>📱</Text>
+                </View>
+                <Text style={styles.rowLabel}>Version</Text>
+                <Text style={styles.rowValue}>1.0.0 (PRO)</Text>
+              </TouchableOpacity>
 
-        <View style={styles.infoRow}>
-          <Text style={styles.settingLabel}>📱  Version</Text>
-          <Text style={styles.infoValue}>1.0.0</Text>
-        </View>
+              <View style={styles.divider} />
 
-        <View style={styles.divider} />
+              <TouchableOpacity style={styles.row}>
+                <View style={styles.rowIcon}>
+                  <Text style={{fontSize: 20}}>🛡️</Text>
+                </View>
+                <Text style={styles.rowLabel}>Confidentialité</Text>
+                <Text style={styles.chevron}>›</Text>
+              </TouchableOpacity>
+            </View>
 
-        <View style={styles.infoRow}>
-          <Text style={styles.settingLabel}>👥  Équipe</Text>
-          <Text style={styles.infoValue}>Groupe ICT202</Text>
-        </View>
-      </View>
+            {/* Logout Button */}
+            <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.8}>
+              <LinearGradient
+                colors={['rgba(239, 68, 68, 0.2)', 'rgba(239, 68, 68, 0.05)']}
+                style={styles.logoutGradient}
+              >
+                <Text style={styles.logoutText}>Déconnexion</Text>
+              </LinearGradient>
+            </TouchableOpacity>
 
-      {/* Bouton Déconnexion */}
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutText}>🚪  Se déconnecter</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+            <Text style={styles.credits}>CapCut Native by Group ICT202</Text>
+          </ScrollView>
+        </SafeAreaView>
+      </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bg.primary,
-  },
+  container: { flex: 1 },
+  gradient: { flex: 1 },
   header: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border.subtle,
   },
   headerTitle: {
-    fontSize: Typography.fontSize.xl,
-    fontWeight: '800',
-    color: Colors.text.primary,
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
     margin: Spacing.xl,
     padding: Spacing.lg,
-    backgroundColor: Colors.bg.secondary,
-    borderRadius: 16,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: Colors.border.default,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: Colors.accent.primary,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
   },
   avatarText: {
     color: '#fff',
-    fontSize: Typography.fontSize.xl,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '900',
   },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    color: Colors.text.primary,
-    fontSize: Typography.fontSize.base,
-    fontWeight: '700',
-  },
-  profileEmail: {
-    color: Colors.text.tertiary,
-    fontSize: Typography.fontSize.sm,
-    marginTop: 2,
+  profileInfo: { flex: 1 },
+  profileName: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  profileEmail: { color: Colors.text.tertiary, fontSize: 13, marginTop: 2 },
+  editBtn: {
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   section: {
     marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
-    backgroundColor: Colors.bg.secondary,
-    borderRadius: 16,
+    marginBottom: Spacing.xl,
+    backgroundColor: 'rgba(18, 18, 26, 0.8)',
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: Colors.border.default,
+    borderColor: 'rgba(255,255,255,0.05)',
     overflow: 'hidden',
   },
   sectionLabel: {
     color: Colors.accent.secondary,
-    fontSize: Typography.fontSize.xs,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '800',
     letterSpacing: 1.5,
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
+    paddingTop: Spacing.lg,
     paddingBottom: Spacing.sm,
+    textTransform: 'uppercase',
   },
-  settingRow: {
+  row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.lg,
   },
-  settingLabel: {
-    color: Colors.text.primary,
-    fontSize: Typography.fontSize.base,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  rowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.03)',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    justifyContent: 'center',
+    marginRight: Spacing.md,
   },
-  infoValue: {
-    color: Colors.text.tertiary,
-    fontSize: Typography.fontSize.sm,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.border.subtle,
-    marginHorizontal: Spacing.lg,
-  },
-  logoutButton: {
-    marginHorizontal: Spacing.xl,
-    marginTop: Spacing.md,
-    paddingVertical: Spacing.md,
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-    alignItems: 'center',
-  },
-  logoutText: {
-    color: '#EF4444',
-    fontSize: Typography.fontSize.base,
-    fontWeight: '700',
-  },
+  rowLabel: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' },
+  rowValue: { color: Colors.text.tertiary, fontSize: 14, fontWeight: '500' },
+  chevron: { color: Colors.text.tertiary, fontSize: 24, fontWeight: '300' },
+  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.03)', marginLeft: 64 },
+  logoutBtn: { marginHorizontal: Spacing.xl, marginTop: Spacing.md, borderRadius: 16, overflow: 'hidden' },
+  logoutGradient: { paddingVertical: Spacing.lg, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.2)' },
+  logoutText: { color: '#EF4444', fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
+  credits: { textAlign: 'center', marginTop: 40, marginBottom: 40, color: 'rgba(255,255,255,0.1)', fontSize: 10, fontWeight: '700', letterSpacing: 1 },
 });

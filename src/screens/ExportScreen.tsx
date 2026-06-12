@@ -10,11 +10,15 @@ import {
   StatusBar,
   Share,
   Alert,
+  Dimensions,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { Colors, Spacing, Typography } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useEditorStore } from '../store/editorStore';
 import { FFmpegService } from '../services/ffmpeg.service';
+
+const { width } = Dimensions.get('window');
 
 export const ExportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { videoClips, audioClips, textOverlays, aspectRatio } = useEditorStore();
@@ -31,7 +35,6 @@ export const ExportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setExportPath(null);
 
     if (mode === 'local') {
-      // Local FFmpeg Kit render
       await FFmpegService.renderProject(
         videoClips,
         audioClips,
@@ -42,43 +45,25 @@ export const ExportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         (outputPath) => {
           setIsExporting(false);
           setExportPath(outputPath);
-          Alert.alert('Succès', 'Rendu local terminé avec succès ! Vidéo enregistrée.');
+          Alert.alert('Succès', 'Rendu local terminé !');
         },
         (errorMsg) => {
           setIsExporting(false);
-          Alert.alert('Erreur de rendu', errorMsg);
+          Alert.alert('Erreur', errorMsg);
         }
       );
     } else {
-      // Mode cloud : simulation pour la démo
       try {
         if (!user) throw new Error('Utilisateur non connecté');
-
         setProgress(10);
-        // Step 1: Upload project description JSON
-        setProgress(30);
-        
-        // Simulating cloud queue & processing speedup
         const interval = setInterval(() => {
-          setProgress((prev) => {
-            if (prev >= 90) {
-              clearInterval(interval);
-              return 90;
-            }
-            return prev + 15;
-          });
-        }, 1000);
+          setProgress((prev) => (prev >= 90 ? 90 : prev + 10));
+        }, 800);
 
-        // Uploading media files (normally we upload each clip to Firebase Storage)
-        // Here we simulate the process
         setTimeout(async () => {
           clearInterval(interval);
           setProgress(100);
           setIsExporting(false);
-          
-          // In a real cloud setup, the server renders the video and returns a download url.
-          // For the sake of local simulation, we run a quick low-res local compile as fallback output
-          // so the user actually gets a real video file to play with on device.
           await FFmpegService.renderProject(
             videoClips,
             audioClips,
@@ -88,16 +73,14 @@ export const ExportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             () => {},
             (outputPath) => {
               setExportPath(outputPath);
-              Alert.alert('Succès', 'Rendu cloud terminé ! Fichier synchronisé et téléchargé.');
+              Alert.alert('Succès', 'Rendu cloud terminé !');
             },
-            () => {
-              Alert.alert('Succès', 'Rendu cloud complété (Simulé).');
-            }
+            () => {}
           );
-        }, 6000);
+        }, 4000);
       } catch (err: any) {
         setIsExporting(false);
-        Alert.alert('Erreur Cloud', err.message || 'Échec du traitement cloud');
+        Alert.alert('Erreur', err.message);
       }
     }
   };
@@ -107,7 +90,7 @@ export const ExportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     try {
       await Share.share({
         url: exportPath,
-        title: 'Mon Montage CapCut Native',
+        title: 'Mon Montage',
         message: 'Regardez ma nouvelle vidéo créée avec CapCut Native !',
       });
     } catch (e) {
@@ -116,246 +99,202 @@ export const ExportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bg.primary} />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} disabled={isExporting}>
-          <Text style={[styles.backText, isExporting && { opacity: 0.5 }]}>← Retour</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Exportation de la Vidéo</Text>
-        <View style={{ width: 60 }} />
-      </View>
-
-      <View style={styles.content}>
-        {!isExporting && !exportPath && (
-          <View style={styles.configContainer}>
-            <Text style={styles.sectionTitle}>1. Résolution de sortie</Text>
-            <View style={styles.optionsRow}>
-              <TouchableOpacity
-                style={[styles.optionCard, resolution === '720p' && styles.optionSelected]}
-                onPress={() => setResolution('720p')}
-              >
-                <Text style={styles.optionLabel}>720p (HD)</Text>
-                <Text style={styles.optionSub}>Plus rapide, taille réduite</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.optionCard, resolution === '1080p' && styles.optionSelected]}
-                onPress={() => setResolution('1080p')}
-              >
-                <Text style={styles.optionLabel}>1080p (Full HD)</Text>
-                <Text style={styles.optionSub}>Excellente qualité</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.sectionTitle}>2. Mode de rendu</Text>
-            <View style={styles.optionsRow}>
-              <TouchableOpacity
-                style={[styles.optionCard, mode === 'local' && styles.optionSelected]}
-                onPress={() => setMode('local')}
-              >
-                <Text style={styles.optionLabel}>Local (FFmpeg)</Text>
-                <Text style={styles.optionSub}>Généré sur le téléphone (Gratuit, hors ligne)</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.optionCard, mode === 'cloud' && styles.optionSelected]}
-                onPress={() => setMode('cloud')}
-              >
-                <Text style={styles.optionLabel}>Cloud (Rapide ⚡)</Text>
-                <Text style={styles.optionSub}>Délégué à un serveur distant (Requiert connexion)</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.exportBtn} onPress={startExport}>
-              <Text style={styles.exportBtnText}>Lancer le Rendu</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <LinearGradient colors={['#1a1a2e', Colors.bg.primary]} style={styles.gradient}>
+        <SafeAreaView style={{ flex: 1 }}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} disabled={isExporting} style={styles.backBtn}>
+              <Text style={styles.backEmoji}>‹</Text>
             </TouchableOpacity>
+            <Text style={styles.headerTitle}>Exportation</Text>
+            <View style={{ width: 44 }} />
           </View>
-        )}
 
-        {isExporting && (
-          <View style={styles.progressContainer}>
-            <ActivityIndicator size="large" color={Colors.accent.primary} />
-            <Text style={styles.progressText}>Rendu de votre chef d'œuvre en cours...</Text>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
-            </View>
-            <Text style={styles.progressPercent}>{progress}%</Text>
+          <View style={styles.content}>
+            {!isExporting && !exportPath && (
+              <View style={styles.mainCard}>
+                <Text style={styles.sectionTitle}>Qualité</Text>
+                <View style={styles.optionsRow}>
+                  <TouchableOpacity
+                    style={[styles.optionCard, resolution === '720p' && styles.optionSelected]}
+                    onPress={() => setResolution('720p')}
+                  >
+                    <Text style={[styles.optionLabel, resolution === '720p' && styles.textAccent]}>HD 720p</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.optionCard, resolution === '1080p' && styles.optionSelected]}
+                    onPress={() => setResolution('1080p')}
+                  >
+                    <Text style={[styles.optionLabel, resolution === '1080p' && styles.textAccent]}>FHD 1080p</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.sectionTitle}>Moteur de rendu</Text>
+                <View style={styles.optionsRow}>
+                  <TouchableOpacity
+                    style={[styles.optionCard, mode === 'local' && styles.optionSelected]}
+                    onPress={() => setMode('local')}
+                  >
+                    <Text style={styles.optionIcon}>📱</Text>
+                    <Text style={[styles.optionLabel, mode === 'local' && styles.textAccent]}>Local</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.optionCard, mode === 'cloud' && styles.optionSelected]}
+                    onPress={() => setMode('cloud')}
+                  >
+                    <Text style={styles.optionIcon}>☁️</Text>
+                    <Text style={[styles.optionLabel, mode === 'cloud' && styles.textAccent]}>Cloud</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity onPress={startExport} activeOpacity={0.8} style={styles.exportBtnContainer}>
+                  <LinearGradient
+                    colors={Colors.accent.gradient as any}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.exportBtn}
+                  >
+                    <Text style={styles.exportBtnText}>Générer la Vidéo</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {isExporting && (
+              <View style={styles.loadingBox}>
+                <ActivityIndicator size="large" color={Colors.accent.primary} />
+                <Text style={styles.loadingTitle}>Préparation du fichier...</Text>
+                <View style={styles.progressBarContainer}>
+                  <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+                </View>
+                <Text style={styles.progressText}>{progress}%</Text>
+              </View>
+            )}
+
+            {exportPath && (
+              <View style={styles.successBox}>
+                <LinearGradient colors={['rgba(139, 92, 246, 0.2)', 'transparent']} style={styles.successCircle}>
+                  <Text style={styles.successIcon}>🎬</Text>
+                </LinearGradient>
+                <Text style={styles.successTitle}>Exportation Réussie !</Text>
+                <Text style={styles.successSub}>Votre vidéo est prête à être partagée avec le monde.</Text>
+
+                <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+                  <Text style={styles.shareBtnText}>Partager maintenant 🚀</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.backHomeBtn} onPress={() => navigation.navigate('Home')}>
+                  <Text style={styles.backHomeText}>Retour à l'accueil</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-        )}
-
-        {exportPath && (
-          <View style={styles.completedContainer}>
-            <Text style={styles.successIcon}>🎉</Text>
-            <Text style={styles.successTitle}>Vidéo Prête !</Text>
-            <Text style={styles.successSub}>Votre vidéo a été compilée et enregistrée avec succès.</Text>
-
-            <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
-              <Text style={styles.shareBtnText}>Partager la vidéo 📤</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.homeBtn}
-              onPress={() => navigation.navigate('Home')}
-            >
-              <Text style={styles.homeBtnText}>Retourner à l'accueil</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    </SafeAreaView>
+        </SafeAreaView>
+      </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bg.primary,
-  },
+  container: { flex: 1 },
+  gradient: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: Spacing.md,
-    borderBottomWidth: 1,
-    borderColor: Colors.border.subtle,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
-  backText: {
-    color: Colors.text.secondary,
-    fontSize: Typography.fontSize.base,
-  },
-  title: {
-    color: Colors.text.primary,
-    fontWeight: '700',
-    fontSize: Typography.fontSize.md,
-  },
-  content: {
-    flex: 1,
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center',
-    padding: Spacing.xl,
+    alignItems: 'center',
   },
-  configContainer: {
-    backgroundColor: Colors.bg.secondary,
-    borderRadius: 20,
+  backEmoji: { color: '#fff', fontSize: 32, fontWeight: '300', marginTop: -4 },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800', letterSpacing: 0.5 },
+  content: { flex: 1, padding: Spacing.xl, justifyContent: 'center' },
+  mainCard: {
+    backgroundColor: 'rgba(18, 18, 26, 0.8)',
+    borderRadius: 30,
     padding: Spacing.xl,
     borderWidth: 1,
-    borderColor: Colors.border.default,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   sectionTitle: {
-    color: Colors.text.primary,
-    fontSize: Typography.fontSize.base,
+    color: Colors.text.tertiary,
+    fontSize: 12,
     fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
     marginBottom: Spacing.md,
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
   },
-  optionsRow: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
+  optionsRow: { flexDirection: 'row', gap: Spacing.md },
   optionCard: {
     flex: 1,
-    backgroundColor: Colors.bg.tertiary,
-    borderWidth: 1.5,
-    borderColor: Colors.border.default,
-    borderRadius: 12,
-    padding: Spacing.md,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 16,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   optionSelected: {
     borderColor: Colors.accent.primary,
-    backgroundColor: 'rgba(139, 92, 246, 0.05)',
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
   },
-  optionLabel: {
-    color: Colors.text.primary,
-    fontSize: Typography.fontSize.base,
-    fontWeight: '700',
-  },
-  optionSub: {
-    color: Colors.text.tertiary,
-    fontSize: 10,
-    marginTop: Spacing.xs,
-  },
+  optionIcon: { fontSize: 24, marginBottom: 8 },
+  optionLabel: { color: Colors.text.secondary, fontWeight: '700', fontSize: 14 },
+  textAccent: { color: Colors.accent.secondary },
+  exportBtnContainer: { marginTop: Spacing.xl * 1.5 },
   exportBtn: {
-    backgroundColor: Colors.accent.pink,
-    borderRadius: 12,
-    paddingVertical: Spacing.md,
+    borderRadius: 16,
+    paddingVertical: Spacing.lg,
     alignItems: 'center',
-    marginTop: Spacing.lg,
+    shadowColor: Colors.accent.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 8,
   },
-  exportBtnText: {
-    color: Colors.text.primary,
-    fontWeight: '700',
-    fontSize: Typography.fontSize.md,
-  },
-  progressContainer: {
-    alignItems: 'center',
-  },
-  progressText: {
-    color: Colors.text.secondary,
-    fontSize: Typography.fontSize.base,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.md,
-  },
-  progressBarBg: {
+  exportBtnText: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 0.5 },
+  loadingBox: { alignItems: 'center' },
+  loadingTitle: { color: '#fff', fontSize: 18, fontWeight: '700', marginTop: Spacing.xl, marginBottom: Spacing.lg },
+  progressBarContainer: {
     width: '100%',
-    height: 10,
-    backgroundColor: Colors.bg.tertiary,
-    borderRadius: 5,
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 4,
     overflow: 'hidden',
   },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: Colors.accent.primary,
-  },
-  progressPercent: {
-    color: Colors.text.primary,
-    fontSize: Typography.fontSize.md,
-    fontWeight: '700',
-    marginTop: Spacing.sm,
-  },
-  completedContainer: {
+  progressBarFill: { height: '100%', backgroundColor: Colors.accent.primary },
+  progressText: { color: Colors.text.tertiary, fontSize: 14, marginTop: Spacing.md, fontWeight: '600' },
+  successBox: { alignItems: 'center' },
+  successCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: Spacing.xl,
   },
-  successIcon: {
-    fontSize: 64,
-    marginBottom: Spacing.md,
-  },
-  successTitle: {
-    color: Colors.text.primary,
-    fontSize: Typography.fontSize.xl,
-    fontWeight: '800',
-  },
-  successSub: {
-    color: Colors.text.tertiary,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.mega,
-  },
+  successIcon: { fontSize: 60 },
+  successTitle: { color: '#fff', fontSize: 24, fontWeight: '900', textAlign: 'center' },
+  successSub: { color: Colors.text.tertiary, textAlign: 'center', marginTop: Spacing.sm, marginBottom: Spacing.mega, lineHeight: 20 },
   shareBtn: {
     backgroundColor: Colors.accent.primary,
-    borderRadius: 12,
+    borderRadius: 16,
     width: '100%',
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.lg,
     alignItems: 'center',
     marginBottom: Spacing.md,
   },
-  shareBtnText: {
-    color: Colors.text.primary,
-    fontWeight: '700',
-    fontSize: Typography.fontSize.md,
-  },
-  homeBtn: {
-    backgroundColor: Colors.bg.secondary,
-    borderColor: Colors.border.default,
-    borderWidth: 1,
-    borderRadius: 12,
-    width: '100%',
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-  },
-  homeBtnText: {
-    color: Colors.text.secondary,
-    fontWeight: '600',
-    fontSize: Typography.fontSize.base,
-  },
+  shareBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  backHomeBtn: { paddingVertical: Spacing.md },
+  backHomeText: { color: Colors.text.tertiary, fontWeight: '600', textDecorationLine: 'underline' },
 });

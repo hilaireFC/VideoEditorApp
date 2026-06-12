@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "prefabPath": "C:\\Users\\patri\\.gradle\\caches\\modules-2\\files-2.1\\com.google.prefab\\cli\\2.1.0\\aa32fec809c44fa531f01dcfb739b5b3304d3050\\cli-2.1.0-all.jar",
+  "packages": [
+    "C:\\Users\\patri\\Desktop\\ReactNative\\VideoEditorApp\\node_modules\\react-native-reanimated\\android\\build\\intermediates\\prefab_package\\debug\\prefab",
+    "C:\\Users\\patri\\Desktop\\ReactNative\\VideoEditorApp\\node_modules\\react-native-worklets\\android\\build\\intermediates\\prefab_package\\debug\\prefab",
+    "C:\\Users\\patri\\.gradle\\caches\\9.3.1\\transforms\\05d858574fce026c4aa086f34e0a8e30\\workspace\\transformed\\react-android-0.85.3-debug\\prefab",
+    "C:\\Users\\patri\\Desktop\\ReactNative\\VideoEditorApp\\node_modules\\react-native-worklets-core\\android\\build\\intermediates\\prefab_package\\debug\\prefab",
+    "C:\\Users\\patri\\.gradle\\caches\\9.3.1\\transforms\\bfc22ab73782c23ce37a76a6d01690d6\\workspace\\transformed\\hermes-android-250829098.0.10-debug\\prefab",
+    "C:\\Users\\patri\\.gradle\\caches\\9.3.1\\transforms\\91f3fc34a4d52f5c27e8357687ecd9b7\\workspace\\transformed\\fbjni-0.7.0\\prefab"
+  ]
+}

@@ -12,6 +12,7 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { Colors, Spacing, Typography } from '../theme';
 import { useAuthStore } from '../store/authStore';
 
@@ -40,7 +41,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     }
     setError(null);
     await register(email.trim(), password);
-    // La navigation se fait automatiquement via AppNavigator si succès
   };
 
   return (
@@ -48,83 +48,110 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bg.primary} />
-      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        {/* Header section */}
-        <View style={styles.header}>
-          <Text style={styles.emojiLogo}>📝</Text>
-          <Text style={styles.title}>Créer un Compte</Text>
-          <Text style={styles.subtitle}>Rejoignez CapCut Native et éditez sans limites</Text>
-        </View>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <LinearGradient
+        colors={['#1A1A2E', Colors.bg.primary, '#1A1A2E']}
+        style={styles.gradient}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header section */}
+          <View style={styles.header}>
+            <View style={styles.logoContainer}>
+              <Text style={styles.emojiLogo}>✨</Text>
+            </View>
+            <Text style={styles.title}>Créer un Compte</Text>
+            <Text style={styles.subtitle}>Libérez votre créativité avec CapCut Native</Text>
+          </View>
 
-        {/* Form Container */}
-        <View style={styles.form}>
-          <Text style={styles.label}>Adresse Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="votre.email@exemple.com"
-            placeholderTextColor={Colors.text.tertiary}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={(t) => {
-              setEmail(t);
-              setError(null);
-            }}
-          />
+          {/* Form Container */}
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Adresse Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="votre.email@exemple.com"
+                placeholderTextColor={Colors.text.tertiary}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={(t) => {
+                  setEmail(t);
+                  setError(null);
+                }}
+              />
+            </View>
 
-          <Text style={styles.label}>Mot de passe</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Min. 6 caractères"
-            placeholderTextColor={Colors.text.tertiary}
-            secureTextEntry
-            autoCapitalize="none"
-            value={password}
-            onChangeText={(t) => {
-              setPassword(t);
-              setError(null);
-            }}
-          />
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Mot de passe</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Min. 6 caractères"
+                placeholderTextColor={Colors.text.tertiary}
+                secureTextEntry
+                autoCapitalize="none"
+                value={password}
+                onChangeText={(t) => {
+                  setPassword(t);
+                  setError(null);
+                }}
+              />
+            </View>
 
-          <Text style={styles.label}>Confirmer le mot de passe</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••••••"
-            placeholderTextColor={Colors.text.tertiary}
-            secureTextEntry
-            autoCapitalize="none"
-            value={confirmPassword}
-            onChangeText={(t) => {
-              setConfirmPassword(t);
-              setError(null);
-            }}
-          />
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Confirmer le mot de passe</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••••••"
+                placeholderTextColor={Colors.text.tertiary}
+                secureTextEntry
+                autoCapitalize="none"
+                value={confirmPassword}
+                onChangeText={(t) => {
+                  setConfirmPassword(t);
+                  setError(null);
+                }}
+              />
+            </View>
 
-          {error && <Text style={styles.errorText}>⚠️ {error}</Text>}
-
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={handleRegister}
-            disabled={isLoading}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={Colors.text.primary} />
-            ) : (
-              <Text style={styles.registerButtonText}>S'inscrire</Text>
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>⚠️ {error}</Text>
+              </View>
             )}
-          </TouchableOpacity>
-        </View>
 
-        {/* Footer/Navigation section */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Vous avez déjà un compte ? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginLink}>Se connecter</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            <TouchableOpacity
+              onPress={handleRegister}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#EC4899', '#8B5CF6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.registerButton}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={Colors.text.primary} />
+                ) : (
+                  <Text style={styles.registerButtonText}>S'inscrire Maintenant</Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Footer/Navigation section */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Déjà membre ? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.loginLink}>Se connecter</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </LinearGradient>
     </KeyboardAvoidingView>
   );
 };
@@ -132,7 +159,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg.primary,
+  },
+  gradient: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -143,67 +172,90 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.xl,
   },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(236, 72, 153, 0.2)',
+  },
   emojiLogo: {
-    fontSize: 54,
-    marginBottom: Spacing.sm,
+    fontSize: 40,
   },
   title: {
-    fontSize: Typography.fontSize.xxl,
+    fontSize: 28,
     fontWeight: '900',
     color: Colors.text.primary,
+    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: Typography.fontSize.base,
     color: Colors.text.tertiary,
     marginTop: Spacing.xs,
     textAlign: 'center',
+    opacity: 0.8,
   },
   form: {
-    backgroundColor: Colors.bg.secondary,
-    borderRadius: 20,
+    backgroundColor: 'rgba(26, 26, 40, 0.8)',
+    borderRadius: 24,
     padding: Spacing.xl,
     borderWidth: 1,
-    borderColor: Colors.border.default,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  inputGroup: {
+    marginBottom: Spacing.md,
   },
   label: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: '600',
-    color: Colors.text.secondary,
+    fontSize: Typography.fontSize.xs,
+    fontWeight: '700',
+    color: Colors.text.tertiary,
     marginBottom: Spacing.xs,
-    marginTop: Spacing.md,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   input: {
-    backgroundColor: Colors.bg.tertiary,
-    borderColor: Colors.border.default,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     color: Colors.text.primary,
     fontSize: Typography.fontSize.base,
   },
+  errorContainer: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    padding: Spacing.md,
+    borderRadius: 12,
+    marginTop: Spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+  },
   errorText: {
     color: Colors.error,
     fontSize: Typography.fontSize.sm,
-    marginTop: Spacing.md,
-    fontWeight: '500',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   registerButton: {
-    backgroundColor: Colors.accent.pink,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: Spacing.md,
     alignItems: 'center',
-    marginTop: Spacing.xl,
-    shadowColor: Colors.accent.pink,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    marginTop: Spacing.lg,
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   registerButtonText: {
     color: Colors.text.primary,
     fontSize: Typography.fontSize.md,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   footer: {
     flexDirection: 'row',
@@ -219,5 +271,6 @@ const styles = StyleSheet.create({
     color: Colors.accent.secondary,
     fontSize: Typography.fontSize.base,
     fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });

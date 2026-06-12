@@ -13,6 +13,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { CustomSlider as Slider } from '../components/CustomSlider';
 import Video from 'react-native-video';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -77,7 +78,6 @@ export const EditorScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   // Selected items resolved
   const selectedVideoClip = videoClips.find(c => c.id === selectedClipId && selectedTrackType === 'video');
-  const selectedAudioClip = audioClips.find(c => c.id === selectedClipId && selectedTrackType === 'audio');
 
   // Compute timeline segments
   let currentStart = 0;
@@ -136,9 +136,9 @@ export const EditorScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         });
       }
       await AsyncStorage.setItem(PROJECTS_KEY, JSON.stringify(updated));
-      Alert.alert('✅ Succès', 'Projet sauvegardé localement !');
+      Alert.alert('✅ Sauvegardé', 'Projet enregistré.');
     } catch (e) {
-      Alert.alert('Erreur', 'Impossible de sauvegarder le projet.');
+      Alert.alert('Erreur', 'Impossible de sauvegarder.');
     } finally {
       setIsSaving(false);
     }
@@ -164,18 +164,15 @@ export const EditorScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     if (result.didCancel || !result.assets || result.assets.length === 0) return;
     const asset = result.assets[0];
     if (!asset.uri) return;
-    
-    // Strict validation: Reject photos/videos if the user picked one by mistake
     if (asset.type && (asset.type.includes('image') || asset.type.includes('video'))) {
-      Alert.alert('Erreur', 'Veuillez sélectionner uniquement un fichier audio (musique), et non une photo ou vidéo.');
+      Alert.alert('Erreur', 'Veuillez sélectionner un fichier audio.');
       return;
     }
-
     addAudioClip({
       id: Math.random().toString(36).substring(7),
       name: asset.fileName || 'Musique Locale',
       uri: asset.uri,
-      duration: asset.duration || 30, // Estimé si inconnu
+      duration: asset.duration || 30,
       timelineStart: currentTime,
     });
   };
@@ -185,7 +182,7 @@ export const EditorScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       id: Math.random().toString(36).substring(7),
       name: track.name,
       uri: track.uri,
-      duration: 30, // Default duration since it's a stream
+      duration: 30,
       timelineStart: currentTime,
     });
     setActiveModal(null);
@@ -206,14 +203,14 @@ export const EditorScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const handleSplit = () => {
     if (!selectedVideoClip) {
-      Alert.alert('Info', 'Sélectionnez un clip vidéo sur la timeline pour le diviser.');
+      Alert.alert('Info', 'Sélectionnez un clip vidéo.');
       return;
     }
     const segment = videoSegments.find(s => s.clip.id === selectedVideoClip.id);
     if (!segment) return;
     const playheadRelative = (currentTime - segment.start) * selectedVideoClip.speed + selectedVideoClip.startTrim;
     if (playheadRelative <= selectedVideoClip.startTrim + 0.5 || playheadRelative >= selectedVideoClip.endTrim - 0.5) {
-      Alert.alert('Erreur', 'Impossible de couper trop près des extrémités du clip.');
+      Alert.alert('Erreur', 'Coupe impossible ici.');
       return;
     }
     const clipIndex = videoClips.findIndex(c => c.id === selectedVideoClip.id);
@@ -231,184 +228,142 @@ export const EditorScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     else if (selectedTrackType === 'audio' && selectedClipId) removeAudioClip(selectedClipId);
     else if (selectedTrackType === 'text' && selectedClipId) removeTextOverlay(selectedClipId);
     else if (selectedTrackType === 'image' && selectedClipId) removeImageOverlay(selectedClipId);
-    else Alert.alert('Info', 'Sélectionnez un élément sur la timeline pour le supprimer.');
+    else Alert.alert('Info', 'Sélectionnez un élément.');
   };
-
-  const handleExport = () => navigation.navigate('Export');
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bg.primary} />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.headerBtnText}>← Home</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backBtnText}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{projectName}</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle} numberOfLines={1}>{projectName}</Text>
+        </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity onPress={undo} style={styles.iconBtn}><Text style={styles.iconBtnText}>↩️</Text></TouchableOpacity>
-          <TouchableOpacity onPress={redo} style={styles.iconBtn}><Text style={styles.iconBtnText}>↪️</Text></TouchableOpacity>
-          <TouchableOpacity onPress={handleSave} disabled={isSaving}>
-            <Text style={styles.headerBtnText}>{isSaving ? '...' : '💾'}</Text>
+          <TouchableOpacity onPress={undo} style={styles.actionIcon}><Text style={styles.actionIconText}>↩</Text></TouchableOpacity>
+          <TouchableOpacity onPress={redo} style={styles.actionIcon}><Text style={styles.actionIconText}>↪</Text></TouchableOpacity>
+          <TouchableOpacity onPress={handleSave} disabled={isSaving} style={styles.saveBtn}>
+            <Text style={styles.saveBtnText}>{isSaving ? '...' : 'Sauver'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleExport} style={styles.exportBtn}>
-            <Text style={styles.exportBtnText}>Exporter ▶</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Export')}>
+            <LinearGradient colors={['#EC4899', '#8B5CF6']} start={{x:0,y:0}} end={{x:1,y:0}} style={styles.exportBtn}>
+              <Text style={styles.exportBtnText}>Exporter</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Preview Player */}
-      <View style={[styles.playerContainer, aspectRatio === '9:16' && styles.player916]}>
-        {activeClip ? (
-          <Video
-            ref={playerRef}
-            source={{ uri: activeClip.uri }}
-            style={styles.videoPlayer}
-            resizeMode="contain"
-            paused={!isPlaying}
-            muted={activeClip.volume === 0}
-            volume={activeClip.volume}
-            rate={activeClip.speed}
-            onProgress={onProgress}
-            playInBackground={false}
-          />
-        ) : (
-          <View style={styles.placeholderPlayer}>
-            <Text style={styles.placeholderIcon}>🎬</Text>
-            <Text style={styles.placeholderText}>Appuyez sur "➕ Vidéo" pour commencer</Text>
+      {/* Preview Area */}
+      <View style={styles.previewContainer}>
+        <View style={[styles.playerSurface, aspectRatio === '9:16' ? styles.player916 : styles.player169]}>
+          {activeClip ? (
+            <Video
+              ref={playerRef}
+              source={{ uri: activeClip.uri }}
+              style={styles.video}
+              resizeMode="contain"
+              paused={!isPlaying}
+              muted={activeClip.volume === 0}
+              volume={activeClip.volume}
+              rate={activeClip.speed}
+              onProgress={onProgress}
+            />
+          ) : (
+            <View style={styles.emptyPlayer}>
+              <Text style={styles.emptyEmoji}>🎬</Text>
+              <Text style={styles.emptyText}>Ajoutez un média</Text>
+            </View>
+          )}
+
+          {/* Overlays Rendering */}
+          {textOverlays.map((to) => {
+            const visible = currentTime >= to.timelineStart && currentTime <= to.timelineStart + to.duration;
+            if (!visible) return null;
+            return (
+              <Text key={to.id} style={[styles.textOverlay, { color: to.color, fontSize: to.fontSize, left: `${to.positionX}%` as any, top: `${to.positionY}%` as any }]}>
+                {to.text}
+              </Text>
+            );
+          })}
+          {imageOverlays.map((io) => {
+            const visible = currentTime >= io.timelineStart && currentTime <= io.timelineStart + io.duration;
+            if (!visible) return null;
+            return (
+              <Text key={io.id} style={[styles.stickerOverlay, { fontSize: 80 * io.scale, left: `${io.positionX}%` as any, top: `${io.positionY}%` as any }]}>
+                {io.uri}
+              </Text>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Playback Controls */}
+      <View style={styles.controlsBar}>
+        <Text style={styles.timestamp}>{currentTime.toFixed(1)}s / {totalDuration.toFixed(1)}s</Text>
+        <TouchableOpacity style={styles.playBtn} onPress={handlePlayPause}>
+          <View style={styles.playBtnInner}>
+            <Text style={styles.playIcon}>{isPlaying ? '⏸' : '▶'}</Text>
           </View>
-        )}
-        {/* Text overlays */}
-        {textOverlays.map((to) => {
-          const visible = currentTime >= to.timelineStart && currentTime <= to.timelineStart + to.duration;
-          if (!visible) return null;
-          return (
-            <Text key={to.id} style={[styles.playerTextOverlay, { color: to.color, fontSize: to.fontSize, left: `${to.positionX}%` as any, top: `${to.positionY}%` as any }]}>
-              {to.text}
-            </Text>
-          );
-        })}
-        {/* Image/Sticker overlays */}
-        {imageOverlays.map((io) => {
-          const visible = currentTime >= io.timelineStart && currentTime <= io.timelineStart + io.duration;
-          if (!visible) return null;
-          return (
-            <Text key={io.id} style={[styles.playerStickerOverlay, { fontSize: 80 * io.scale, left: `${io.positionX}%` as any, top: `${io.positionY}%` as any }]}>
-              {io.uri}
-            </Text>
-          );
-        })}
-      </View>
-
-      {/* Player Controls */}
-      <View style={styles.playerControls}>
-        <Text style={styles.timeLabel}>{currentTime.toFixed(1)}s / {totalDuration.toFixed(1)}s</Text>
-        <TouchableOpacity style={styles.playPauseBtn} onPress={handlePlayPause}>
-          <Text style={styles.playPauseIcon}>{isPlaying ? '⏸' : '▶'}</Text>
         </TouchableOpacity>
-        <View style={{ width: 60 }} />
+        <View style={{width: 50}} />
       </View>
 
-      {/* Timeline */}
-      <View style={styles.timelineContainer}>
-        <View style={styles.playhead} pointerEvents="none" />
+      {/* Timeline Section */}
+      <View style={styles.timelineSection}>
+        <View style={styles.playheadLine} pointerEvents="none" />
         <ScrollView
           ref={timelineScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
-          onScroll={(e) => {
-            if (!isPlaying) {
-              setCurrentTime(e.nativeEvent.contentOffset.x / TIMELINE_SCALE);
-            }
-          }}
+          onScroll={(e) => !isPlaying && setCurrentTime(e.nativeEvent.contentOffset.x / TIMELINE_SCALE)}
           scrollEventThrottle={16}
-          contentContainerStyle={[styles.timelineContent, { paddingLeft: SCREEN_WIDTH / 2 }]}
+          contentContainerStyle={{ paddingLeft: SCREEN_WIDTH / 2, paddingRight: SCREEN_WIDTH / 2 }}
         >
-          <View style={{ width: Math.max(totalDuration, 30) * TIMELINE_SCALE + SCREEN_WIDTH / 2 }}>
+          <View style={{ width: Math.max(totalDuration, 10) * TIMELINE_SCALE }}>
             {/* Ruler */}
-            <View style={styles.timelineRuler}>
-              {Array.from({ length: Math.ceil(Math.max(totalDuration, 30)) + 2 }).map((_, i) => (
-                <View key={i} style={[styles.rulerGrad, { left: i * TIMELINE_SCALE }]}>
-                  <View style={styles.rulerTick} />
-                  <Text style={styles.rulerLabel}>{i}s</Text>
+            <View style={styles.ruler}>
+              {Array.from({ length: Math.ceil(totalDuration) + 5 }).map((_, i) => (
+                <View key={i} style={[styles.tick, { left: i * TIMELINE_SCALE }]}>
+                  <View style={styles.tickLine} />
+                  <Text style={styles.tickLabel}>{i}s</Text>
                 </View>
               ))}
             </View>
 
             {/* Video Track */}
             <View style={styles.track}>
-              <Text style={styles.trackLabel}>🎞️ Vidéo</Text>
-              <View style={styles.trackRow}>
-                {videoSegments.map((seg) => {
-                  const isSelected = selectedClipId === seg.clip.id && selectedTrackType === 'video';
-                  return (
-                    <TouchableOpacity
-                      key={seg.clip.id}
-                      style={[styles.clipBlock, { width: Math.max(seg.duration * TIMELINE_SCALE, 40) }, isSelected && styles.clipSelected]}
-                      onPress={() => selectClip(seg.clip.id, 'video')}
-                    >
-                      <Text style={styles.clipBlockText} numberOfLines={1}>{seg.clip.name}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-                <TouchableOpacity style={styles.addClipInline} onPress={handleAddVideo}>
-                  <Text style={styles.addClipInlineText}>➕</Text>
+              <View style={styles.trackContent}>
+                {videoSegments.map((seg) => (
+                  <TouchableOpacity
+                    key={seg.clip.id}
+                    style={[styles.clip, { width: Math.max(seg.duration * TIMELINE_SCALE, 30) }, selectedClipId === seg.clip.id && styles.selectedClip]}
+                    onPress={() => selectClip(seg.clip.id, 'video')}
+                  >
+                    <Text style={styles.clipText} numberOfLines={1}>{seg.clip.name}</Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={styles.inlineAdd} onPress={handleAddVideo}>
+                  <Text style={styles.inlineAddText}>+</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Audio Track */}
             <View style={styles.track}>
-              <Text style={styles.trackLabel}>🎵 Audio</Text>
-              <View style={styles.trackRow}>
-                {audioClips.map((ac) => {
-                  const isSelected = selectedClipId === ac.id && selectedTrackType === 'audio';
-                  const acDuration = ac.endTrim - ac.startTrim;
-                  return (
-                    <TouchableOpacity
-                      key={ac.id}
-                      style={[styles.audioBlock, { left: ac.timelineStart * TIMELINE_SCALE, width: Math.max(acDuration * TIMELINE_SCALE, 40) }, isSelected && styles.audioSelected]}
-                      onPress={() => selectClip(ac.id, 'audio')}
-                    >
-                      <Text style={styles.clipBlockText} numberOfLines={1}>{ac.name}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-                <TouchableOpacity style={[styles.addClipInline, { marginLeft: audioClips.length > 0 ? 8 : 0 }]} onPress={handleAddAudioNative}>
-                  <Text style={styles.addClipInlineText}>🎵➕</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Overlays Track (Text + Stickers) */}
-            <View style={styles.track}>
-              <Text style={styles.trackLabel}>✨ Calques (Texte & Décors)</Text>
-              <View style={styles.trackRow}>
-                {textOverlays.map((to) => {
-                  const isSelected = selectedClipId === to.id && selectedTrackType === 'text';
-                  return (
-                    <TouchableOpacity
-                      key={to.id}
-                      style={[styles.textBlock, { left: to.timelineStart * TIMELINE_SCALE, width: Math.max(to.duration * TIMELINE_SCALE, 40) }, isSelected && styles.textSelected]}
-                      onPress={() => selectClip(to.id, 'text')}
-                    >
-                      <Text style={styles.clipBlockText} numberOfLines={1}>{to.text}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-                {imageOverlays.map((io) => {
-                  const isSelected = selectedClipId === io.id && selectedTrackType === 'image';
-                  return (
-                    <TouchableOpacity
-                      key={io.id}
-                      style={[styles.stickerBlock, { left: io.timelineStart * TIMELINE_SCALE, width: Math.max(io.duration * TIMELINE_SCALE, 40) }, isSelected && styles.textSelected]}
-                      onPress={() => selectClip(io.id, 'image')}
-                    >
-                      <Text style={styles.clipBlockText} numberOfLines={1}>{io.uri} Decor</Text>
-                    </TouchableOpacity>
-                  );
-                })}
+              <View style={styles.trackContent}>
+                {audioClips.map((ac) => (
+                  <TouchableOpacity
+                    key={ac.id}
+                    style={[styles.audioClip, { left: ac.timelineStart * TIMELINE_SCALE, width: (ac.endTrim - ac.startTrim) * TIMELINE_SCALE }, selectedClipId === ac.id && styles.selectedAudio]}
+                    onPress={() => selectClip(ac.id, 'audio')}
+                  >
+                    <Text style={styles.clipText} numberOfLines={1}>{ac.name}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
           </View>
@@ -416,222 +371,179 @@ export const EditorScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       </View>
 
       {/* Toolbar */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.toolbar} contentContainerStyle={styles.toolbarContent}>
-        <TouchableOpacity style={styles.toolBtn} onPress={handleAddVideo}>
-          <Text style={styles.toolIcon}>➕</Text>
-          <Text style={styles.toolLabel}>Vidéo</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.toolBtn} onPress={() => setActiveModal('musicLib')}>
-          <Text style={styles.toolIcon}>🎧</Text>
-          <Text style={styles.toolLabel}>Musique</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.toolBtn} onPress={() => setActiveModal('stickers')}>
-          <Text style={styles.toolIcon}>🎩</Text>
-          <Text style={styles.toolLabel}>Stickers</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.toolBtn} onPress={handleSplit}>
-          <Text style={styles.toolIcon}>✂️</Text>
-          <Text style={styles.toolLabel}>Diviser</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.toolBtn} onPress={() => selectedVideoClip ? setActiveModal('trim') : Alert.alert('Info', 'Sélectionnez un clip vidéo.')}>
-          <Text style={styles.toolIcon}>⏳</Text>
-          <Text style={styles.toolLabel}>Trim</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.toolBtn} onPress={() => selectedVideoClip ? setActiveModal('filter') : Alert.alert('Info', 'Sélectionnez un clip vidéo.')}>
-          <Text style={styles.toolIcon}>🎨</Text>
-          <Text style={styles.toolLabel}>Filtres</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.toolBtn} onPress={() => { setTextInput(''); setActiveModal('text'); }}>
-          <Text style={styles.toolIcon}>📝</Text>
-          <Text style={styles.toolLabel}>Texte</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.toolBtn} onPress={handleDelete}>
-          <Text style={styles.toolIcon}>🗑️</Text>
-          <Text style={styles.toolLabel}>Supprimer</Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* MODAL: Music Library & Local Audio */}
-      <Modal visible={activeModal === 'musicLib'} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>🎧 Ajouter de la Musique</Text>
-            
-            <TouchableOpacity style={styles.localAudioBtn} onPress={() => { setActiveModal(null); handleAddAudioNative(); }}>
-              <Text style={styles.localAudioBtnIcon}>📁</Text>
-              <Text style={styles.localAudioBtnText}>Importer depuis le téléphone</Text>
-            </TouchableOpacity>
-
-            <View style={styles.divider} />
-            <Text style={styles.libTitle}>Bibliothèque Gratuite en ligne :</Text>
-
-            <ScrollView style={styles.musicList}>
-              {ONLINE_MUSICS.map(track => (
-                <TouchableOpacity key={track.id} style={styles.musicTrackItem} onPress={() => addOnlineMusic(track)}>
-                  <Text style={styles.musicTrackIcon}>🎵</Text>
-                  <Text style={styles.musicTrackName}>{track.name}</Text>
-                  <Text style={styles.musicTrackAdd}>+</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setActiveModal(null)}>
-              <Text style={styles.modalCloseBtnText}>Fermer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* MODAL: Stickers & Decors */}
-      <Modal visible={activeModal === 'stickers'} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>✨ Décors et Accessoires</Text>
-            <View style={styles.stickersGrid}>
-              {STICKERS.map(sticker => (
-                <TouchableOpacity key={sticker.id} style={styles.stickerGridItem} onPress={() => addSticker(sticker)}>
-                  <Text style={styles.stickerEmoji}>{sticker.emoji}</Text>
-                  <Text style={styles.stickerName}>{sticker.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setActiveModal(null)}>
-              <Text style={styles.modalCloseBtnText}>Fermer</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* MODAL: Filtres */}
-      <Modal visible={activeModal === 'filter'} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>🎨 Ajustement des Filtres</Text>
-            {selectedVideoClip && (
-              <View style={styles.modalBody}>
-                <Text style={styles.label}>Luminosité ({selectedVideoClip.filter.brightness.toFixed(1)})</Text>
-                <Slider style={styles.slider} minimumValue={0.5} maximumValue={1.5} value={selectedVideoClip.filter.brightness} onValueChange={(val) => updateVideoClip(selectedVideoClip.id, { filter: { ...selectedVideoClip.filter, brightness: val } })} />
+      <View style={styles.toolbarContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolbarContent}>
+          {[
+            { id: 'add', icon: '➕', label: 'Ajouter', action: handleAddVideo },
+            { id: 'music', icon: '🎵', label: 'Musique', action: () => setActiveModal('musicLib') },
+            { id: 'sticker', icon: '🎨', label: 'Stickers', action: () => setActiveModal('stickers') },
+            { id: 'split', icon: '✂️', label: 'Diviser', action: handleSplit },
+            { id: 'text', icon: '📝', label: 'Texte', action: () => { setTextInput(''); setActiveModal('text'); } },
+            { id: 'trim', icon: '⏳', label: 'Trim', action: () => selectedVideoClip ? setActiveModal('trim') : Alert.alert('Info', 'Sélectionnez un clip') },
+            { id: 'del', icon: '🗑️', label: 'Suppr.', action: handleDelete },
+          ].map(tool => (
+            <TouchableOpacity key={tool.id} style={styles.toolItem} onPress={tool.action}>
+              <View style={styles.toolIconCircle}>
+                <Text style={styles.toolEmoji}>{tool.icon}</Text>
               </View>
-            )}
-            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setActiveModal(null)}>
-              <Text style={styles.modalCloseBtnText}>Fermer</Text>
+              <Text style={styles.toolLabel}>{tool.label}</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+          ))}
+        </ScrollView>
+      </View>
 
-      {/* MODAL: Texte */}
-      <Modal visible={activeModal === 'text'} transparent animationType="slide">
+      {/* Modals (Trim, Music, Stickers, Text) - Styled to match new theme */}
+      <Modal visible={activeModal !== null} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>📝 Ajouter du Texte</Text>
-            <TextInput style={styles.textInput} placeholder="Votre texte ici..." placeholderTextColor={Colors.text.tertiary} value={textInput} onChangeText={setTextInput} />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.btnSecondary} onPress={() => setActiveModal(null)}><Text style={styles.btnText}>Annuler</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.btnPrimary} onPress={() => { if (textInput.trim()) { addTextOverlay({ text: textInput, color: '#ffffff', fontSize: 24, fontFamily: 'System', timelineStart: currentTime, duration: 3, positionX: 40, positionY: 40 }); setActiveModal(null); } }}><Text style={styles.btnText}>Ajouter</Text></TouchableOpacity>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {activeModal === 'trim' && 'Découper le clip'}
+                {activeModal === 'musicLib' && 'Bibliothèque Audio'}
+                {activeModal === 'stickers' && 'Autocollants'}
+                {activeModal === 'text' && 'Ajouter du texte'}
+              </Text>
+              <TouchableOpacity onPress={() => setActiveModal(null)} style={styles.closeModalBtn}>
+                <Text style={styles.closeModalText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              {activeModal === 'trim' && selectedVideoClip && (
+                <View style={styles.trimBody}>
+                  <Text style={styles.sliderLabel}>Début: {selectedVideoClip.startTrim.toFixed(1)}s</Text>
+                  <Slider minimumValue={0} maximumValue={selectedVideoClip.duration - 0.5} value={selectedVideoClip.startTrim} onValueChange={(val) => val < selectedVideoClip.endTrim - 0.5 && updateVideoClip(selectedVideoClip.id, { startTrim: val })} />
+                  <Text style={styles.sliderLabel}>Fin: {selectedVideoClip.endTrim.toFixed(1)}s</Text>
+                  <Slider minimumValue={0.5} maximumValue={selectedVideoClip.duration} value={selectedVideoClip.endTrim} onValueChange={(val) => val > selectedVideoClip.startTrim + 0.5 && updateVideoClip(selectedVideoClip.id, { endTrim: val })} />
+                </View>
+              )}
+
+              {activeModal === 'musicLib' && (
+                <ScrollView>
+                  <TouchableOpacity style={styles.localUploadBtn} onPress={() => { setActiveModal(null); handleAddAudioNative(); }}>
+                    <Text style={styles.localUploadText}>📁 Importer localement</Text>
+                  </TouchableOpacity>
+                  {ONLINE_MUSICS.map(m => (
+                    <TouchableOpacity key={m.id} style={styles.musicItem} onPress={() => addOnlineMusic(m)}>
+                      <Text style={styles.musicIcon}>🎵</Text>
+                      <Text style={styles.musicName}>{m.name}</Text>
+                      <Text style={styles.musicPlus}>+</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+
+              {activeModal === 'stickers' && (
+                <View style={styles.stickersGrid}>
+                  {STICKERS.map(s => (
+                    <TouchableOpacity key={s.id} style={styles.stickerItem} onPress={() => addSticker(s)}>
+                      <Text style={styles.stickerEmoji}>{s.emoji}</Text>
+                      <Text style={styles.stickerName}>{s.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {activeModal === 'text' && (
+                <View>
+                  <TextInput style={styles.modalInput} placeholder="Écrivez ici..." placeholderTextColor="#666" value={textInput} onChangeText={setTextInput} autoFocus />
+                  <TouchableOpacity
+                    style={styles.modalActionBtn}
+                    onPress={() => {
+                      if(textInput.trim()) {
+                        addTextOverlay({ text: textInput, color: '#fff', fontSize: 24, timelineStart: currentTime, duration: 3, positionX: 40, positionY: 40 });
+                        setActiveModal(null);
+                      }
+                    }}
+                  >
+                    <Text style={styles.modalActionBtnText}>Ajouter</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
         </View>
       </Modal>
-
-      {/* MODAL: Trim */}
-      <Modal visible={activeModal === 'trim'} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>⏳ Découper le clip (Trim)</Text>
-            {selectedVideoClip && (
-              <View style={styles.modalBody}>
-                <Text style={styles.label}>Début ({selectedVideoClip.startTrim.toFixed(1)}s)</Text>
-                <Slider style={styles.slider} minimumValue={0} maximumValue={selectedVideoClip.duration - 0.5} value={selectedVideoClip.startTrim} onValueChange={(val) => { if (val < selectedVideoClip.endTrim - 0.5) updateVideoClip(selectedVideoClip.id, { startTrim: val }); }} />
-                <Text style={styles.label}>Fin ({selectedVideoClip.endTrim.toFixed(1)}s)</Text>
-                <Slider style={styles.slider} minimumValue={0.5} maximumValue={selectedVideoClip.duration} value={selectedVideoClip.endTrim} onValueChange={(val) => { if (val > selectedVideoClip.startTrim + 0.5) updateVideoClip(selectedVideoClip.id, { endTrim: val }); }} />
-              </View>
-            )}
-            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setActiveModal(null)}><Text style={styles.modalCloseBtnText}>Fermer</Text></TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg.primary },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderBottomWidth: 1, borderColor: Colors.border.subtle },
-  headerBtnText: { color: Colors.text.secondary, fontSize: Typography.fontSize.sm, fontWeight: '600' },
-  headerTitle: { color: Colors.text.primary, fontWeight: '700', fontSize: Typography.fontSize.base, maxWidth: 120 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  iconBtn: { padding: Spacing.xs },
-  iconBtnText: { fontSize: 16 },
-  exportBtn: { backgroundColor: Colors.accent.primary, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: 8 },
-  exportBtnText: { color: Colors.text.primary, fontWeight: '700', fontSize: Typography.fontSize.sm },
-  playerContainer: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center', position: 'relative' },
-  player916: { aspectRatio: 9 / 16, maxHeight: 320, alignSelf: 'center' },
-  videoPlayer: { width: '100%', height: '100%' },
-  placeholderPlayer: { justifyContent: 'center', alignItems: 'center' },
-  placeholderIcon: { fontSize: 40, marginBottom: Spacing.sm },
-  placeholderText: { color: Colors.text.tertiary, textAlign: 'center', paddingHorizontal: Spacing.lg },
-  playerTextOverlay: { position: 'absolute', fontWeight: 'bold', textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: Spacing.xs, borderRadius: 4 },
-  playerStickerOverlay: { position: 'absolute' },
-  playerControls: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderBottomWidth: 1, borderColor: Colors.border.subtle },
-  timeLabel: { color: Colors.text.secondary, fontSize: Typography.fontSize.sm },
-  playPauseBtn: { backgroundColor: Colors.bg.secondary, borderRadius: 20, width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  playPauseIcon: { fontSize: 20, color: Colors.text.primary },
-  timelineContainer: { flex: 1, backgroundColor: Colors.bg.secondary, position: 'relative' },
-  playhead: { position: 'absolute', top: 0, bottom: 0, left: SCREEN_WIDTH / 2, width: 2, backgroundColor: '#FF3B30', zIndex: 10 },
-  timelineContent: { paddingVertical: Spacing.sm },
-  timelineRuler: { height: 28, borderBottomWidth: 1, borderColor: Colors.border.subtle, position: 'relative' },
-  rulerGrad: { position: 'absolute', top: 0, width: 40, height: '100%', alignItems: 'center' },
-  rulerTick: { width: 1, height: 8, backgroundColor: Colors.text.tertiary },
-  rulerLabel: { fontSize: 9, color: Colors.text.tertiary, marginTop: 2 },
-  track: { marginVertical: 2 },
-  trackLabel: { color: Colors.text.tertiary, fontSize: Typography.fontSize.xs, marginLeft: Spacing.sm, marginBottom: 2 },
-  trackRow: { height: 48, backgroundColor: 'rgba(0,0,0,0.2)', flexDirection: 'row', alignItems: 'center', position: 'relative' },
-  clipBlock: { height: '85%', backgroundColor: Colors.accent.primary, borderColor: '#fff', borderWidth: 0.5, borderRadius: 6, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.xs, marginHorizontal: 1 },
-  clipSelected: { borderColor: '#FF3B30', borderWidth: 2 },
-  audioBlock: { position: 'absolute', height: '75%', backgroundColor: Colors.timeline?.audioTrack || '#2dd4bf', borderColor: '#fff', borderWidth: 0.5, borderRadius: 6, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.xs },
-  audioSelected: { borderColor: '#FF3B30', borderWidth: 2 },
-  textBlock: { position: 'absolute', height: '75%', backgroundColor: '#a855f7', borderColor: '#fff', borderWidth: 0.5, borderRadius: 6, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.xs },
-  textSelected: { borderColor: '#FF3B30', borderWidth: 2 },
-  stickerBlock: { position: 'absolute', height: '75%', backgroundColor: '#F59E0B', borderColor: '#fff', borderWidth: 0.5, borderRadius: 6, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.xs },
-  clipBlockText: { color: '#fff', fontSize: 10, fontWeight: '600' },
-  addClipInline: { height: '75%', width: 40, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.3)', borderWidth: 1, borderStyle: 'dashed', borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginLeft: 4 },
-  addClipInlineText: { fontSize: 14 },
-  toolbar: { backgroundColor: Colors.bg.primary, borderTopWidth: 1, borderColor: Colors.border.subtle, maxHeight: 70 },
-  toolbarContent: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.sm, gap: Spacing.xs },
-  toolBtn: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, minWidth: 56 },
-  toolIcon: { fontSize: 20 },
-  toolLabel: { color: Colors.text.tertiary, fontSize: 10, marginTop: 2 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: Colors.bg.secondary, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: Spacing.xl, paddingBottom: 40 },
-  modalTitle: { color: Colors.text.primary, fontSize: Typography.fontSize.lg, fontWeight: '800', marginBottom: Spacing.lg, textAlign: 'center' },
-  modalBody: { gap: Spacing.sm },
-  label: { color: Colors.text.secondary, fontSize: Typography.fontSize.sm, marginBottom: 4 },
-  slider: { width: '100%', height: 40 },
-  textInput: { backgroundColor: Colors.bg.primary, borderRadius: 12, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md, color: Colors.text.primary, fontSize: Typography.fontSize.base, borderWidth: 1, borderColor: Colors.border.default, marginBottom: Spacing.lg },
-  modalActions: { flexDirection: 'row', gap: Spacing.md },
-  btnPrimary: { flex: 1, backgroundColor: Colors.accent.primary, borderRadius: 12, paddingVertical: Spacing.md, alignItems: 'center' },
-  btnSecondary: { flex: 1, backgroundColor: Colors.bg.primary, borderRadius: 12, paddingVertical: Spacing.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border.default },
-  btnText: { color: Colors.text.primary, fontWeight: '700', fontSize: Typography.fontSize.base },
-  modalCloseBtn: { backgroundColor: Colors.accent.primary, borderRadius: 12, paddingVertical: Spacing.md, alignItems: 'center', marginTop: Spacing.lg },
-  modalCloseBtnText: { color: '#fff', fontWeight: '700', fontSize: Typography.fontSize.base },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  backBtn: { width: 32, height: 32, justifyContent: 'center', alignItems: 'center' },
+  backBtnText: { color: '#fff', fontSize: 32, fontWeight: '300' },
+  headerTitleContainer: { flex: 1, paddingHorizontal: Spacing.sm },
+  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  actionIcon: { padding: 4 },
+  actionIconText: { fontSize: 22, color: Colors.text.secondary },
+  saveBtn: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.05)' },
+  saveBtnText: { color: Colors.text.secondary, fontSize: 12, fontWeight: '700' },
+  exportBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
+  exportBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
   
-  // Audio Library specific
-  localAudioBtn: { backgroundColor: Colors.bg.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: Spacing.md, borderRadius: 12, borderWidth: 1, borderColor: Colors.border.default, marginBottom: Spacing.md },
-  localAudioBtnIcon: { fontSize: 24, marginRight: Spacing.sm },
-  localAudioBtnText: { color: Colors.text.primary, fontWeight: '600', fontSize: Typography.fontSize.base },
-  divider: { height: 1, backgroundColor: Colors.border.subtle, marginVertical: Spacing.md },
-  libTitle: { color: Colors.text.secondary, fontSize: Typography.fontSize.sm, fontWeight: '600', marginBottom: Spacing.md },
-  musicList: { maxHeight: 200 },
-  musicTrackItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.primary, padding: Spacing.md, borderRadius: 8, marginBottom: Spacing.sm },
-  musicTrackIcon: { fontSize: 20, marginRight: Spacing.md },
-  musicTrackName: { flex: 1, color: Colors.text.primary, fontWeight: '600' },
-  musicTrackAdd: { color: Colors.accent.primary, fontSize: 24, fontWeight: '700' },
+  previewContainer: { width: '100%', height: 300, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
+  playerSurface: { position: 'relative', overflow: 'hidden', backgroundColor: '#000' },
+  player169: { width: '100%', aspectRatio: 16/9 },
+  player916: { height: '100%', aspectRatio: 9/16 },
+  video: { width: '100%', height: '100%' },
+  emptyPlayer: { alignItems: 'center' },
+  emptyEmoji: { fontSize: 48, marginBottom: 8 },
+  emptyText: { color: '#444', fontWeight: '600' },
 
-  // Stickers Grid
-  stickersGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md, justifyContent: 'center' },
-  stickerGridItem: { backgroundColor: Colors.bg.primary, borderRadius: 12, padding: Spacing.md, alignItems: 'center', width: 80, height: 80, justifyContent: 'center', borderWidth: 1, borderColor: Colors.border.default },
+  textOverlay: { position: 'absolute', fontWeight: '900', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 4 },
+  stickerOverlay: { position: 'absolute' },
+
+  controlsBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, backgroundColor: Colors.bg.secondary },
+  timestamp: { color: Colors.text.tertiary, fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  playBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(139, 92, 246, 0.2)', padding: 2 },
+  playBtnInner: { flex: 1, borderRadius: 20, backgroundColor: Colors.accent.primary, justifyContent: 'center', alignItems: 'center' },
+  playIcon: { color: '#fff', fontSize: 20, marginLeft: 2 },
+
+  timelineSection: { flex: 1, backgroundColor: Colors.bg.primary, position: 'relative' },
+  playheadLine: { position: 'absolute', left: SCREEN_WIDTH / 2, top: 0, bottom: 0, width: 2, backgroundColor: Colors.accent.pink, zIndex: 100, shadowColor: Colors.accent.pink, shadowRadius: 5, shadowOpacity: 0.5, elevation: 5 },
+  ruler: { height: 30, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)', position: 'relative' },
+  tick: { position: 'absolute', top: 0, alignItems: 'center' },
+  tickLine: { width: 1, height: 8, backgroundColor: '#333' },
+  tickLabel: { fontSize: 9, color: '#444', marginTop: 2, fontWeight: '600' },
+
+  track: { height: 60, marginVertical: 4 },
+  trackContent: { flex: 1, backgroundColor: 'rgba(255,255,255,0.02)', flexDirection: 'row', alignItems: 'center' },
+  clip: { height: 44, backgroundColor: Colors.accent.primary, borderRadius: 8, justifyContent: 'center', paddingHorizontal: 8, marginHorizontal: 1, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  selectedClip: { borderColor: '#fff', borderWidth: 2, shadowColor: '#fff', shadowRadius: 5, shadowOpacity: 0.3 },
+  clipText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  inlineAdd: { width: 40, height: 44, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, borderStyle: 'dashed', borderWidth: 1, borderColor: '#444', justifyContent: 'center', alignItems: 'center', marginLeft: 4 },
+  inlineAddText: { color: '#666', fontSize: 20 },
+  audioClip: { position: 'absolute', height: 36, backgroundColor: Colors.timeline.audioTrack, borderRadius: 6, justifyContent: 'center', paddingHorizontal: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  selectedAudio: { borderColor: '#fff', borderWidth: 2 },
+
+  toolbarContainer: { backgroundColor: Colors.bg.secondary, borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.05)', paddingVertical: 10 },
+  toolbarContent: { paddingHorizontal: 16, gap: 16 },
+  toolItem: { alignItems: 'center', width: 60 },
+  toolIconCircle: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  toolEmoji: { fontSize: 20 },
+  toolLabel: { color: Colors.text.tertiary, fontSize: 10, fontWeight: '600' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: Colors.bg.tertiary, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, minHeight: 300 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  closeModalBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center' },
+  closeModalText: { color: '#666', fontSize: 14 },
+  modalBody: { paddingBottom: 40 },
+  sliderLabel: { color: Colors.text.secondary, fontSize: 13, marginBottom: 8, marginTop: 16 },
+  localUploadBtn: { backgroundColor: 'rgba(139, 92, 246, 0.1)', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.2)' },
+  localUploadText: { color: Colors.accent.secondary, fontWeight: '700' },
+  musicItem: { flexDirection: 'row', alignItems: 'center', padding: 14, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, marginBottom: 8 },
+  musicIcon: { fontSize: 18, marginRight: 12 },
+  musicName: { flex: 1, color: '#fff', fontWeight: '600' },
+  musicPlus: { color: Colors.accent.primary, fontSize: 20, fontWeight: '900' },
+  stickersGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  stickerItem: { width: (SCREEN_WIDTH - 64) / 3, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 16, alignItems: 'center' },
   stickerEmoji: { fontSize: 32, marginBottom: 4 },
-  stickerName: { color: Colors.text.secondary, fontSize: 10, textAlign: 'center' },
+  stickerName: { color: '#666', fontSize: 10, fontWeight: '600' },
+  modalInput: { backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 12, padding: 16, color: '#fff', fontSize: 16, borderWidth: 1, borderColor: '#333', marginBottom: 20 },
+  modalActionBtn: { backgroundColor: Colors.accent.primary, padding: 16, borderRadius: 12, alignItems: 'center' },
+  modalActionBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
 });
